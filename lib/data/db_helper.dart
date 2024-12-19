@@ -252,4 +252,13 @@ class DBHelper {
     return null; // Return null if the email doesn't exist
   }
 
+  Future<void> deleteAppointment(int appointmentId) async {
+    final db = await database;
+    await db.delete(
+      'appointments',
+      where: 'id = ?',
+      whereArgs: [appointmentId],
+    );
+  }
+
 }

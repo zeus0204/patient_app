@@ -99,6 +99,48 @@ class _CalendarState extends State<Calendar> {
     if (date == null) return '';
     return DateFormat('dd/MM/yyyy').format(date);
   }
+
+  Future<void> _showDeleteConfirmationDialog(int appointmentId) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Appointment'),
+          content: const Text('Are you sure you want to delete this appointment?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                await _deleteAppointment(appointmentId); // Delete the appointment
+              },
+              child: const Text('Okay'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAppointment(int appointmentId) async {
+    final dbHelper = DBHelper();
+    try {
+      await dbHelper.deleteAppointment(appointmentId); // Delete from DB
+      _fetchAppointments(); // Refresh the list of appointments
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment deleted successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting appointment: $e')),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,7 +284,7 @@ class _CalendarState extends State<Calendar> {
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           onPressed: () {
                                             // Your delete logic here
-                                            print('Delete button pressed');
+                                            _showDeleteConfirmationDialog(appointment.id!);
                                           },
                                         ),
                                       ],
