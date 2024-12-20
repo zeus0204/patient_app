@@ -4,7 +4,8 @@ import 'package:patient_app/data/session.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class AddAppointment extends StatefulWidget {
-  const AddAppointment({super.key});
+  final int? id;
+  const AddAppointment({super.key, this.id});
 
   @override
   State<AddAppointment> createState() => _AddAppointmentState();
@@ -15,6 +16,33 @@ class _AddAppointmentState extends State<AddAppointment> {
   String? _selectedTime;
   String? _selectedDoctorId; // To store selected doctor ID
   String? _selectedHospitalId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.id != null) {
+      _loadAppointmentData();
+    }
+  }
+
+  Future<void> _loadAppointmentData() async {
+    try {
+      if (widget.id != null) {
+        List<Map<String, dynamic>> appointments = await DBHelper().getAppointmentsById(widget.id!);
+        if (appointments.isNotEmpty) {
+          final appointment = appointments.first;
+          setState(() {
+            _selectedDate = DateTime.parse(appointment['day']);
+            _selectedDoctorId = appointment['doctor_id'].toString();
+            _selectedHospitalId = appointment['hospital_id'].toString();
+            _selectedTime = appointment['time'];
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error
+    }
+  }
 
   final List<Map<String, String>> doctors = [
     {'id': '1', 'name': 'Doctor 1'},
@@ -361,10 +389,19 @@ class _AddAppointmentState extends State<AddAppointment> {
         'time': _selectedTime, // Store selected time
       };
       
-      await DBHelper().insertAppointment(appointmentData);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Scheduling appintment successfully')),
-      );
+      if (widget.id == null) {
+        // Insert new appointment
+        await DBHelper().insertAppointment(appointmentData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment scheduled successfully')),
+        );
+      } else {
+        // Update existing appointment
+        await DBHelper().updateAppointment(widget.id!, appointmentData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment updated successfully')),
+        );
+      }
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -105,21 +105,22 @@ class _CalendarState extends State<Calendar> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Appointment'),
+          backgroundColor: Colors.white,
+          title: const Text('Delete Appointment', style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),),
           content: const Text('Are you sure you want to delete this appointment?'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop(); // Close the dialog
                 await _deleteAppointment(appointmentId); // Delete the appointment
               },
-              child: const Text('Okay'),
+              child: const Text('Okay', style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),),
             ),
           ],
         );
@@ -141,6 +142,20 @@ class _CalendarState extends State<Calendar> {
       );
     }
   }
+  
+  Future<void> _editAppointment(int? appointmentId) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddAppointment(id:appointmentId),
+      ),
+    );
+    
+    if (result == true) {
+      _fetchAppointments();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,8 +291,7 @@ class _CalendarState extends State<Calendar> {
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.blue),
                                           onPressed: () {
-                                            // Your edit logic here
-                                            
+                                            _editAppointment(appointment.id);                                            
                                           },
                                         ),
                                         IconButton(

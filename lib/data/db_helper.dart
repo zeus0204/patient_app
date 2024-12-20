@@ -237,6 +237,15 @@ class DBHelper {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getAppointmentsById(int id) async {
+    final db = await database;
+    return await db.query(
+      'appointments',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<int?> getUserIdByEmail(String email) async {
     final db = await database;
     final result = await db.query(
@@ -261,4 +270,13 @@ class DBHelper {
     );
   }
 
+  Future<void> updateAppointment(int id, Map<String, dynamic> updatedData) async {
+    final db = await database;
+    await db.update(
+      'appointments',
+      updatedData,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
