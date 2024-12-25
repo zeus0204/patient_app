@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "398029328333",
+    "firebase_url": "https://healthcare-7c213-default-rtdb.firebaseio.com",
+    "project_id": "healthcare-7c213",
+    "storage_bucket": "healthcare-7c213.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398029328333:android:8190a0d75d5722bed43e84",
+        "android_client_info": {
+          "package_name": "com.example.doctor_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcO5PPEY_Q-PnDZjW7MEDm7OYAUvc5b7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398029328333:android:02b2b48a7b85e0e2d43e84",
+        "android_client_info": {
+          "package_name": "com.example.patient_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcO5PPEY_Q-PnDZjW7MEDm7OYAUvc5b7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

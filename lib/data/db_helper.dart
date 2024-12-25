@@ -112,14 +112,14 @@ class DBHelper {
     return result.isNotEmpty ? result.first : null;
   }
   Future<Map<String, dynamic>?> getUserInfoByUserId(int userId) async {
-  final db = await database; // Assume `database` initializes your SQLite instance
-  final result = await db.query(
-    'user_info', // Replace with your actual table name
-    where: 'user_id = ?',
-    whereArgs: [userId],
-  );
-  return result.isNotEmpty ? result.first : null; // Return the first record if found
-}
+    final db = await database; // Assume `database` initializes your SQLite instance
+    final result = await db.query(
+      'user_info', // Replace with your actual table name
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+    return result.isNotEmpty ? result.first : null; // Return the first record if found
+  }
 
   Future<void> updateUser({
     required int id,

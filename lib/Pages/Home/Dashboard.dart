@@ -69,37 +69,56 @@ class _DashboardState extends State<Dashboard> {
     }  
   }
   
-  void _generateQRCode() async {  
-    // Assuming _user is already fetched and contains the necessary information  
-    if (_user != null && _userInfo != null) {  
-      List<String> userData = [  
-      'Name: ${_user!.fullName}',  
-      'Email: ${_user!.email}',  
-      'Phone Number: ${_user!.phoneNumber}',  
-      'Address: ${_userInfo!.address}',  
-      'Contact: ${_userInfo!.contact}',  
-      'Birthday: ${_userInfo!.birthday}'
-    ];
-    for (var history in _medicalHistory!) {
-      userData.add('Medical History Title: ${history.title}');
-      userData.add('Subtitle: ${history.subtitle}');
-      userData.add('Description: ${history.description}');
-    }
-    String userDataString = userData.join('\n');
+   // Import this for JSON serialization  
 
-    Navigator.push(  
-      context,  
-      MaterialPageRoute(  
-        builder: (context) => QRCodePage(data: userDataString),  
-      ),  
-    );  
-    } else {  
-      // Handle case where user data is not available  
-      ScaffoldMessenger.of(context).showSnackBar(  
-        const SnackBar(content: Text("User data not available. Please make your profile!")),  
-      );  
-    }  
+  void _generateQRCode() async {
+  // Assuming _user and _userInfo are already fetched and contain the necessary information
+    if (_user != null && _userInfo != null) {
+      List<Map<String, dynamic>> userData = [
+        {'Name': _user!.fullName},
+        {'Email': _user!.email},
+        {'Phone Number': _user!.phoneNumber},
+        {'Address': _userInfo!.address},
+        {'Contact': _userInfo!.contact},
+        {'Birthday': _userInfo!.birthday},
+      ];
+      
+      // Now add medical history entries
+      List<Map<String, dynamic>> medicalHistoryList = [];
+      for (var history in _medicalHistory!) {
+        medicalHistoryList.add({
+          'Medical History Title': history.title,
+          'Subtitle': history.subtitle,
+          'Description': history.description,
+        });
+      }
+      
+      // Add the medical history list to the main user data
+      userData.add({
+        'Medical History': medicalHistoryList
+      });
+
+      // Convert the list of maps to a JSON string
+      String userDataString = userData.join('\n');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("User data: $userDataString")),
+      );
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => QRCodePage(data: userDataString), // Pass the JSON string
+        ),
+      );
+    } else {
+      // Handle case where user data is not available
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User data not available. Please make your profile!")),
+      );
+    }
   }
+
   
   @override
   Widget build(BuildContext context) {
