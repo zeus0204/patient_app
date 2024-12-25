@@ -26,7 +26,7 @@ class _LandingPage extends State<LandingPage> {
         Navigator.of(context).pushReplacement(_createRoute(Home()));
       } else {
         // User is not authenticated, navigate to Signin
-        Navigator.of(context).pushReplacement(_createRoute(Signin()));
+        Navigator.of(context).pushReplacement(_createRoute(Home()));
       }
     });
   }

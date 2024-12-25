@@ -34,14 +34,14 @@ class _SignupState extends State<Signup> {
         // Convert the hash to a string
         return digest.toString();
       }
-      final userData = {
+      final patientData = {
         'fullName' : _fullName,
         'email' : _email,
         'phoneNumber' : _phoneNumber,
         'password' : hashPassword(_password!),
       };
       try {
-        await DBHelper().insertUser(userData);
+        await DBHelper().insertPatients(patientData);
         
         // Save the user's session after successful signup
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User signed up successfully!')));

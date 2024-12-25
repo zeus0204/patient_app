@@ -31,8 +31,8 @@ class _SigninState extends State<Signin> {
     if (_signInformkey.currentState!.validate()) {
       _signInformkey.currentState!.save();
 
-      final user = await _dbHelper.getUserByEmail(_email!);
-      if (user != null && user['password'] == hashPassword(_password!)) {
+      final patient = await _dbHelper.getPatientsByEmail(_email!);
+      if (patient != null && patient['password'] == hashPassword(_password!)) {
         // Successful login, save the session
         await SessionManager.saveUserSession(_email!);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Successfully')));

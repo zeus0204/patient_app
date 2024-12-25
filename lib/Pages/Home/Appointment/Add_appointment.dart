@@ -28,7 +28,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   Future<void> _loadAppointmentData() async {
     try {
       if (widget.id != null) {
-        List<Map<String, dynamic>> appointments = await DBHelper().getAppointmentsById(widget.id!);
+        List<Map<String, dynamic>> appointments = await DBHelper().getAppointmentsById(widget.id as String);
         if (appointments.isNotEmpty) {
           final appointment = appointments.first;
           setState(() {
@@ -380,7 +380,7 @@ class _AddAppointmentState extends State<AddAppointment> {
         throw Exception('No user session found. Please log in again.');
       }
       final dbHelper = DBHelper();
-      final userId = await dbHelper.getUserIdByEmail(userEmail);
+      final userId = await dbHelper.getPatientIdByEmail(userEmail);
       final appointmentData = {
         'user_id': userId, // Replace with actual patient ID (e.g., from logged-in user)
         'doctor_id': int.parse(_selectedDoctorId!), // Convert ID to integer
@@ -397,7 +397,7 @@ class _AddAppointmentState extends State<AddAppointment> {
         );
       } else {
         // Update existing appointment
-        await DBHelper().updateAppointment(widget.id!, appointmentData);
+        await DBHelper().updateAppointment(widget.id! as String, appointmentData);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Appointment updated successfully')),
         );

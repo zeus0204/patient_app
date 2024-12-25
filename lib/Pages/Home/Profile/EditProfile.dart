@@ -49,11 +49,11 @@ class _EditProfileState extends State<EditProfile> {
     try {
       String? email = await SessionManager.getUserSession();
       if (email != null) {
-        Map<String, dynamic>? userData = await DBHelper().getUserByEmail(email);
+        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
         if (userData != null) {
           int userId = userData['id'];
           Map<String, dynamic>? userInfo =
-              await DBHelper().getUserInfoByUserId(userId);
+              await DBHelper().getPatientsInfoByPatientsId(userId as String);
 
           setState(() {
             _fullName = userData['fullName'];
@@ -80,7 +80,7 @@ class _EditProfileState extends State<EditProfile> {
 
   Future<void> _loadMedicalHistory(int userId) async {
     try {
-      final records = await DBHelper().getMedicalHistoryByUserId(userId);
+      final records = await DBHelper().getMedicalHistoryByPatientsId(userId as String);
       setState(() {
         _medicalHistory = records;
       });
@@ -97,18 +97,16 @@ class _EditProfileState extends State<EditProfile> {
       try {
         String? email = await SessionManager.getUserSession();
         if (email != null) {
-          Map<String, dynamic>? userData = await DBHelper().getUserByEmail(email);
+          Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
           if (userData != null) {
-            int userId = userData['id'];
-
-            await DBHelper().updateUser(
-              id: userId,
+            await DBHelper().updatePatients(
+              email: email,
               fullName: _fullName,
               phoneNumber: _phoneNumber,
             );
 
-            await DBHelper().upsertUserInfo(
-              userId: userId,
+            await DBHelper().updatePatientsInfo(
+              email: email,
               address: _address,
               contact: _contact,
               birthday: _dateOfBirth != null
@@ -489,28 +487,23 @@ class _EditProfileState extends State<EditProfile> {
 
                 if (title.isNotEmpty && subtitle.isNotEmpty && description.isNotEmpty) {
                   final email = await SessionManager.getUserSession();
-                  final user = await DBHelper().getUserByEmail(email!);
+                  final user = await DBHelper().getPatientsByEmail(email!);
 
                   if (user != null) {
                     final userId = user['id'];
-
+                    Map<String, dynamic> medicalHistory = {
+                      'user_id': userId,
+                      'title': title,
+                      'subtitle': subtitle,
+                      'description': description,
+                    };
                     if (record == null) {
                       // Add new medical history
-                      await DBHelper().insertMedicalHistory({
-                        'user_id': userId,
-                        'title': title,
-                        'subtitle': subtitle,
-                        'description': description,
-                      });
+                      await DBHelper().insertMedicalHistory(email, medicalHistory);
                     } else {
                       // Update existing medical history
-                      await DBHelper().updateMedicalHistory(record['id'], {
-                        'title': title,
-                        'subtitle': subtitle,
-                        'description': description,
-                      });
+                      await DBHelper().updateMedicalHistory(email, record['id'], medicalHistory);
                     }
-
                     Navigator.pop(context); 
                     setState(() {
                       _loadMedicalHistory(userId); 

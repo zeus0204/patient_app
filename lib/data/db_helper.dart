@@ -1,282 +1,222 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:patient_app/data/model/Appointment.dart';
 
-// Singleton class for DBHelper
 class DBHelper {
-  static final DBHelper _instance = DBHelper._internal();
-  factory DBHelper() => _instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  DBHelper._internal();
-
-  Database? _database;
-
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB();
-    return _database!;
-  }
-
-  // Initialize database
-  Future<Database> _initDB() async {
-    String path = join(await getDatabasesPath(), 'healthcare.db');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) async {
-        // Create 'users' table
-        await db.execute('''
-          CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fullName TEXT,
-            email TEXT UNIQUE,
-            phoneNumber TEXT,
-            password TEXT
-          )
-        ''');
-
-        // Create 'user_info' table with a foreign key reference to 'users.id'
-        await db.execute('''
-          CREATE TABLE user_info (
-            id INTEGER PRIMARY KEY,
-            user_id INTEGER, -- Foreign Key linked to users.id
-            address TEXT,
-            contact TEXT,
-            birthday TEXT,
-            avatar_url TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE medical_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER, -- Foreign Key linked to users.id
-            title TEXT,
-            subtitle TEXT,
-            description TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE appointments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            doctor_id INTEGER,
-            hospital_id INTEGER,
-            day TEXT,
-            time TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (doctor_id) REFERENCES doctors (id),
-            FOREIGN KEY (hospital_id) REFERENCES hospitals (id)
-          )
-        ''');
-      },
-    );
-  }
-
-
-  // Insert user data
-  Future<void> insertUser(Map<String, dynamic> userData) async {
-    final db = await database;
+  // Insert Patients data
+  Future<void> insertPatients(Map<String, dynamic> patientsData) async {
     try {
-      await db.insert('users', userData, conflictAlgorithm: ConflictAlgorithm.replace);
-    } catch (e) {
-      if(e is DatabaseException && e.isUniqueConstraintError()) {
+      var result = await _firestore.collection('patients').where('email', isEqualTo: patientsData['email']).get();
+      if (result.docs.isNotEmpty) {
         throw Exception('Email already exists. Please use a different email');
       }
-      else {
-        throw Exception('An error occirred while inserting the user');
-      }
+      await _firestore.collection('patients').add(patientsData);
+    } catch (e) {
+      throw Exception('An error occurred while inserting the Patients');
     }
   }
-  // Get all users
-  Future<List<Map<String, dynamic>>> getAllUsers() async {
-    final db = await database;
-    return await db.query('users');
+
+  // Get all patients
+  Future<List<Map<String, dynamic>>> getAllpatients() async {
+    try {
+      final querySnapshot = await _firestore.collection('patients').get();
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch patients: $e');
+    }
   }
 
+  // Check if email exists
   Future<bool> emailExists(String email) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      where: 'email = ?',
-      whereArgs: [email],
-    );
-    return result.isNotEmpty;
+    try {
+      final docSnapshot = await _firestore.collection('patients').doc(email).get();
+      return docSnapshot.exists;
+    } catch (e) {
+      throw Exception('Error checking email existence: $e');
+    }
   }
 
-  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
-    final db = await database;
-    final result = await db.query('users', where: 'email = ?', whereArgs: [email]);
-    return result.isNotEmpty ? result.first : null;
-  }
-  Future<Map<String, dynamic>?> getUserInfoByUserId(int userId) async {
-    final db = await database; // Assume `database` initializes your SQLite instance
-    final result = await db.query(
-      'user_info', // Replace with your actual table name
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
-    return result.isNotEmpty ? result.first : null; // Return the first record if found
+  // Get patients by email
+  Future<Map<String, dynamic>?> getPatientsByEmail(String email) async {
+    try {
+      final docSnapshot = await _firestore.collection('patients').doc(email).get();
+      return docSnapshot.exists ? docSnapshot.data() : null;
+    } catch (e) {
+      throw Exception('Failed to fetch Patients by email: $e');
+    }
   }
 
-  Future<void> updateUser({
-    required int id,
+  // Update Patients information
+  Future<void> updatePatients({
+    required String email,
     String? fullName,
     String? phoneNumber,
   }) async {
-    final db = await database;
+    Map<String, dynamic> updatedPatientsData = {};
+    if (fullName != null) updatedPatientsData['fullName'] = fullName;
+    if (phoneNumber != null) updatedPatientsData['phoneNumber'] = phoneNumber;
 
-    // Only update fields if they are not null
-    Map<String, dynamic> updatedUserData = {};
-    if (fullName != null) updatedUserData['fullName'] = fullName;
-    if (phoneNumber != null) updatedUserData['phoneNumber'] = phoneNumber;
-
-    if (updatedUserData.isNotEmpty) {
-      await db.update(
-        'users',
-        updatedUserData,
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+    if (updatedPatientsData.isNotEmpty) {
+      try {
+        await _firestore.collection('patients').doc(email).update(updatedPatientsData);
+      } catch (e) {
+        throw Exception('Failed to update Patients: $e');
+      }
     }
   }
 
-  Future<void> upsertUserInfo({
-    required int userId,
+  // Manage Patients info
+  Future<void> updatePatientsInfo({
+    required String email,
     String? address,
     String? contact,
     DateTime? birthday,
   }) async {
-    final db = await database;
+    Map<String, dynamic> updatedPatientsInfoData = {};
+    if (address != null) updatedPatientsInfoData['address'] = address;
+    if (contact != null) updatedPatientsInfoData['contact'] = contact;
+    if (birthday != null) updatedPatientsInfoData['birthday'] = birthday.toIso8601String();
 
-    // Prepare the updated user info
-    Map<String, dynamic> updatedUserInfoData = {};
-    if (address != null) updatedUserInfoData['address'] = address;
-    if (contact != null) updatedUserInfoData['contact'] = contact;
-    if (birthday != null) updatedUserInfoData['birthday'] = birthday.toIso8601String();
-
-    if (updatedUserInfoData.isNotEmpty) {
-      // Check if a UserInfo entry already exists for the user
-      final existingRecord = await db.query(
-        'user_info',
-        where: 'user_id = ?',
-        whereArgs: [userId],
-      );
-
-      if (existingRecord.isNotEmpty) {
-        // Update existing record
-        await db.update(
-          'user_info',
-          updatedUserInfoData,
-          where: 'user_id = ?',
-          whereArgs: [userId],
+    if (updatedPatientsInfoData.isNotEmpty) {
+      try {
+        await _firestore.collection('patients_info').doc(email).set(
+          {'email': email, ...updatedPatientsInfoData},
+          SetOptions(merge: true),
         );
-      } else {
-        // Insert new record if it doesn't exist
-        await db.insert(
-          'user_info',
-          {
-            'user_id': userId,
-            ...updatedUserInfoData,
-          },
-        );
+      } catch (e) {
+        throw Exception('Failed to upsert Patients info: $e');
       }
     }
   }
 
-  // Insert a medical history record
-  Future<void> insertMedicalHistory(Map<String, dynamic> medicalHistory) async {
-    final db = await database;
-    await db.insert('medical_history', medicalHistory);
+  // Insert medical history
+  Future<void> insertMedicalHistory(String email, Map<String, dynamic> medicalHistory) async {
+    try {
+      await _firestore.collection('patients').doc(email)
+          .collection('medical_history').add(medicalHistory);
+    } catch (e) {
+      throw Exception('Failed to insert medical history: $e');
+    }
   }
 
-  // Fetch all medical history records for a user
-  Future<List<Map<String, dynamic>>> getMedicalHistoryByUserId(int userId) async {
-    final db = await database;
-    return await db.query(
-      'medical_history',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
+  Future<void> updateMedicalHistory(String email, String recordId, Map<String, dynamic> updatedData) async {
+    try {
+      await _firestore.collection('patients').doc(email)
+          .collection('medical_history').doc(recordId).update(updatedData);
+    } catch (e) {
+      throw Exception('Failed to update medical history: $e');
+    }
   }
 
-  // Delete a medical history record
-  Future<void> deleteMedicalHistory(int id) async {
-    final db = await database;
-    await db.delete(
-      'medical_history',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<void> deleteMedicalHistory(String email, String recordId) async {
+    try {
+      await _firestore.collection('patients').doc(email)
+          .collection('medical_history').doc(recordId).delete();
+    } catch (e) {
+      throw Exception('Failed to delete medical history: $e');
+    }
   }
 
-  Future<void> updateMedicalHistory(int id, Map<String, dynamic> data) async {
-    final db = await database;
-    await db.update(
-      'medical_history',
-      data,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  // Fetch medical history
+  Future<List<Map<String, dynamic>>> getMedicalHistoryByPatientsId(String email) async {
+    try {
+      final querySnapshot = await _firestore.collection('patients').doc(email)
+          .collection('medical_history').get();
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch medical history: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPatientsInfoByPatientsId(String patientsId) async {
+    try {
+      final docRef = _firestore.collection('patients_info').doc(patientsId);
+      final doc = await docRef.get();
+      return doc.exists ? doc.data() : null;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<int?> getPatientIdByEmail(String email) async {
+    try {
+      // Get a reference to the Firestore instance
+      final firestore = FirebaseFirestore.instance;
+
+      // Query the 'users' collection where the 'email' field matches the given email
+      final querySnapshot = await firestore
+          .collection('patients')
+          .where('email', isEqualTo: email)
+          .limit(1) // Limit to 1 result since emails are unique
+          .get();
+
+      // Check if any documents were returned
+      if (querySnapshot.docs.isNotEmpty) {
+        // Extract the 'id' from the first document; ensure it is a number
+        return querySnapshot.docs.first.data()['id'] as int?;
+      }
+    } catch (e) {
+      print('Failed to get user ID by email: $e');
+    }
+
+    // Return null if no matching document was found or an error occurred
+    return null;
+  }
+
+  Future<List<Appointment>> getAppointmentsByPatientId(String patientId) async {
+    try {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('appointments')
+          .where('patient_id', isEqualTo: patientId)
+          .get();
+
+      return querySnapshot.docs.map((doc) =>
+          Appointment.fromMap(doc.data() as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw Exception('Error fetching appointments: $e');
+    }
+  }
+
+  Future<void> deleteAppointment(String appointmentId) async {
+    try {
+      await _firestore.collection('appointments').doc(appointmentId).delete();
+    } catch (e) {
+      throw Exception('Error deleting appointment: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAppointmentsById(String id) async {
+    try {
+      // Access Firestore instance
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      // Query Firestore collection to find appointments matching the given ID
+      QuerySnapshot querySnapshot = await firestore
+          .collection('appointments')
+          .where(FieldPath.documentId, isEqualTo: id)
+          .get();
+
+      // Convert the query snapshot into a list of maps
+      return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    } catch (e) {
+      throw Exception('Error fetching appointment by ID: $e');
+    }
   }
 
   Future<void> insertAppointment(Map<String, dynamic> appointmentData) async {
-    final db = await database;
-    await db.insert('appointments', appointmentData);
-  }
-
-  // Fetch appointments for a specific patient
-  Future<List<Map<String, dynamic>>> getAppointmentsByPatientId(int patientId) async {
-    final db = await database;
-    return await db.query(
-      'appointments',
-      where: 'user_id = ?',
-      whereArgs: [patientId],
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> getAppointmentsById(int id) async {
-    final db = await database;
-    return await db.query(
-      'appointments',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<int?> getUserIdByEmail(String email) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      columns: ['id'], // Only fetch the 'id' column
-      where: 'email = ?',
-      whereArgs: [email],
-    );
-
-    if (result.isNotEmpty) {
-      return result.first['id'] as int; // Return the userId
+    try {
+      await _firestore.collection('appointments').add(appointmentData);
+    } catch (e) {
+      throw Exception('Error inserting appointment: $e');
     }
-    return null; // Return null if the email doesn't exist
   }
 
-  Future<void> deleteAppointment(int appointmentId) async {
-    final db = await database;
-    await db.delete(
-      'appointments',
-      where: 'id = ?',
-      whereArgs: [appointmentId],
-    );
-  }
-
-  Future<void> updateAppointment(int id, Map<String, dynamic> updatedData) async {
-    final db = await database;
-    await db.update(
-      'appointments',
-      updatedData,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<void> updateAppointment(String id, Map<String, dynamic> updatedData) async {
+    try {
+      await _firestore.collection('appointments').doc(id).update(updatedData);
+    } catch (e) {
+      throw Exception('Error updating appointment: $e');
+    }
   }
 }

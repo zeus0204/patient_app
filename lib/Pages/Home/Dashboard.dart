@@ -46,12 +46,12 @@ class _DashboardState extends State<Dashboard> {
     try {  
       String? email = await SessionManager.getUserSession();  
       if (email != null) {  
-        Map<String, dynamic>? userData = await DBHelper().getUserByEmail(email);
+        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
         int userId = userData?['id'];
 
           // Fetch UserInfo
-        Map<String, dynamic>? userInfo = await DBHelper().getUserInfoByUserId(userId);
-        List<Map<String, dynamic>>? userMedicalHistory = await DBHelper().getMedicalHistoryByUserId(userId);
+        Map<String, dynamic>? userInfo = await DBHelper().getPatientsInfoByPatientsId(userId as String);
+        List<Map<String, dynamic>>? userMedicalHistory = await DBHelper().getMedicalHistoryByPatientsId(userId as String);
         if (userData != null) {  
           setState(() {  
             _user = User.fromMap(userData);

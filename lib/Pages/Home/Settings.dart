@@ -31,7 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {  
       String? email = await SessionManager.getUserSession();  
       if (email != null) {  
-        Map<String, dynamic>? userData = await DBHelper().getUserByEmail(email);  
+        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);  
         if (userData != null) {  
           setState(() {  
             _user = User.fromMap(userData);  

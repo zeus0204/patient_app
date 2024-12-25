@@ -36,18 +36,18 @@ class _CalendarState extends State<Calendar> {
 
       // Step 2: Get the user ID from the database using the email
       final dbHelper = DBHelper();
-      final userId = await dbHelper.getUserIdByEmail(userEmail);
+      final userId = await dbHelper.getPatientIdByEmail(userEmail);
       if (userId == null) {
         throw Exception('No user found for the current session email.');
       }
 
       // Step 3: Fetch appointments for the user ID
-      final appointmentsData = await dbHelper.getAppointmentsByPatientId(userId);
+      final appointmentsData = await dbHelper.getAppointmentsByPatientId(userId as String);
 
       // Step 4: Update the state with the fetched appointments
       setState(() {
         _appointments = appointmentsData
-            .map<Appointment>((appointmentMap) => Appointment.fromMap(appointmentMap))
+            .map<Appointment>((appointmentMap) => Appointment.fromMap(appointmentMap as Map<String, dynamic>))
             .toList();
         _isLoading = false; // Hide loading indicator
       });
@@ -131,7 +131,7 @@ class _CalendarState extends State<Calendar> {
   Future<void> _deleteAppointment(int appointmentId) async {
     final dbHelper = DBHelper();
     try {
-      await dbHelper.deleteAppointment(appointmentId); // Delete from DB
+      await dbHelper.deleteAppointment(appointmentId as String); // Delete from DB
       _fetchAppointments(); // Refresh the list of appointments
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Appointment deleted successfully')),
