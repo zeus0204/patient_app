@@ -23,10 +23,11 @@ class _LandingPage extends State<LandingPage> {
       // Navigate based on authentication status
       if (userEmail != null) {
         // User is authenticated, navigate to Home
-        Navigator.of(context).pushReplacement(_createRoute(Home()));
+        Navigator.of(context).pushReplacement(_createRoute(const Home()));
       } else {
         // User is not authenticated, navigate to Signin
-        Navigator.of(context).pushReplacement(_createRoute(Home()));
+        Navigator.of(context).pushReplacement(_createRoute(const Signin()));
+        // Navigator.of(context).pushReplacement(_createRoute(Home()));
       }
     });
   }

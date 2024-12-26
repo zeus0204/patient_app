@@ -29,9 +29,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadUserData() async {  
     try {  
-      String? email = await SessionManager.getUserSession();  
+      String? email = await SessionManager.getUserSession(); 
+      
       if (email != null) {  
-        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);  
+        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
+        
         if (userData != null) {  
           setState(() {  
             _user = User.fromMap(userData);  

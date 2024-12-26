@@ -51,9 +51,8 @@ class _EditProfileState extends State<EditProfile> {
       if (email != null) {
         Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
         if (userData != null) {
-          int userId = userData['id'];
           Map<String, dynamic>? userInfo =
-              await DBHelper().getPatientsInfoByPatientsId(userId as String);
+              await DBHelper().getPatientsInfoByEmail(email);
 
           setState(() {
             _fullName = userData['fullName'];
@@ -68,7 +67,7 @@ class _EditProfileState extends State<EditProfile> {
             _contactController.text = _contact ?? '';
             _dateOfBirthController.text = _dateOfBirth ?? '';
           });
-          _loadMedicalHistory(userId);
+          _loadMedicalHistory(email);
         }
       }
     } catch (e) {
@@ -78,15 +77,15 @@ class _EditProfileState extends State<EditProfile> {
     }
   }
 
-  Future<void> _loadMedicalHistory(int userId) async {
+  Future<void> _loadMedicalHistory(email) async {
     try {
-      final records = await DBHelper().getMedicalHistoryByPatientsId(userId as String);
+      final records = await DBHelper().getMedicalHistoryByEmail(email);
       setState(() {
         _medicalHistory = records;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading medical history: $e')),
+        SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
       );
     }
   }
@@ -490,9 +489,7 @@ class _EditProfileState extends State<EditProfile> {
                   final user = await DBHelper().getPatientsByEmail(email!);
 
                   if (user != null) {
-                    final userId = user['id'];
                     Map<String, dynamic> medicalHistory = {
-                      'user_id': userId,
                       'title': title,
                       'subtitle': subtitle,
                       'description': description,
@@ -502,11 +499,11 @@ class _EditProfileState extends State<EditProfile> {
                       await DBHelper().insertMedicalHistory(email, medicalHistory);
                     } else {
                       // Update existing medical history
-                      await DBHelper().updateMedicalHistory(email, record['id'], medicalHistory);
+                      await DBHelper().updateMedicalHistory(email, record['title'] ,medicalHistory);
                     }
                     Navigator.pop(context); 
                     setState(() {
-                      _loadMedicalHistory(userId); 
+                      _loadMedicalHistory(email); 
                     });
                   }
                 }

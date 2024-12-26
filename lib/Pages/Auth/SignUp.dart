@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'SignIn.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert'; // For utf8.encode()
+import 'package:firebase_auth/firebase_auth.dart';
 class Signup extends StatefulWidget {  
   const Signup({super.key});  
 
@@ -21,40 +20,47 @@ class _SignupState extends State<Signup> {
   String? _email;
   String? _password;
 
-  Future<void> _submitForm () async {
+  Future<void> _submitForm() async {
     if (_signupFormKey.currentState!.validate()) {
       _signupFormKey.currentState!.save();
-      String hashPassword(String password) {
-        // Convert the password to bytes
-        final bytes = utf8.encode(password);
-
-        // Hash the bytes using SHA-256
-        final digest = sha256.convert(bytes);
-
-        // Convert the hash to a string
-        return digest.toString();
-      }
-      final patientData = {
-        'fullName' : _fullName,
-        'email' : _email,
-        'phoneNumber' : _phoneNumber,
-        'password' : hashPassword(_password!),
-      };
       try {
-        await DBHelper().insertPatients(patientData);
-        
-        // Save the user's session after successful signup
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User signed up successfully!')));
-        // Navigate to the next screen (e.g., home screen or login)
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Signin()), // Replace with your home page
-        );
+          UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: _email!,
+            password: _password!,
+          );
+          final patientData = {
+            'fullName': _fullName,
+            'email': _email,
+            'password': _password,
+            'phoneNumber': _phoneNumber,
+          };
+
+          await DBHelper().insertPatients(patientData);
+
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User signed up successfully!')));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Signin()),
+          );
+      } on FirebaseAuthException catch (e) {
+          debugPrint("FirebaseAuthException: ${e.message}");
+          String errorMessage;
+          if (e.code == 'email-already-in-use') {
+            errorMessage = 'This email is already in use.';
+          } else if (e.code == 'weak-password') {
+            errorMessage = 'The password provided is too weak.';
+          } else {
+            errorMessage = 'An error occurred: ${e.message ?? 'Unknown error'}';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email already exists. Please use a different email.')));
+          debugPrint("Unexpected error: $e");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Unexpected error occurred. Try again.")));
       }
+
     }
   }
+
   @override  
   Widget build(BuildContext context) {  
     return Scaffold(  

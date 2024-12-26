@@ -7,6 +7,7 @@ import '../Home/Home.dart';
 import 'SignUp.dart';
 import 'package:crypto/crypto.dart';
 import '../../data/session.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Signin extends StatefulWidget {  
   const Signin({super.key});  
@@ -31,17 +32,30 @@ class _SigninState extends State<Signin> {
     if (_signInformkey.currentState!.validate()) {
       _signInformkey.currentState!.save();
 
-      final patient = await _dbHelper.getPatientsByEmail(_email!);
-      if (patient != null && patient['password'] == hashPassword(_password!)) {
-        // Successful login, save the session
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _email!,
+          password: _password!,
+        );
+
         await SessionManager.saveUserSession(_email!);
+        
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Successfully')));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Home()), // Replace with your home page
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid credentials')));
+
+      } on FirebaseAuthException catch (e) {
+        String errorMessage;
+        if (e.code == 'user-not-found') {
+          errorMessage = 'No user found for that email.';
+        } else if (e.code == 'wrong-password') {
+          errorMessage = 'Wrong password provided.';
+        } else {
+          errorMessage = 'An error occurred. Please try again.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     }
   }

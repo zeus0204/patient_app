@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4' // Ensure this matches your Gradle version
+        classpath 'com.google.gms:google-services:4.3.15' // Correctly add the Google Services plugin only once
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -16,3 +27,12 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// apply plugin: 'com.android.application'
+// apply plugin: 'com.google.gms.google-services'
+
+// android {
+//     defaultConfig {
+//         applicationId "com.example.myflutterapp"
+//     }
+// }
