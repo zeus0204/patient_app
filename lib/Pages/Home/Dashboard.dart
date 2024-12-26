@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:patient_app/Pages/Home/QR_code.dart';
 import 'package:patient_app/data/db_helper.dart';
-import 'package:patient_app/data/model/Medical_history.dart';
-import 'package:patient_app/data/model/User.dart';
-import 'package:patient_app/data/model/UserInfo.dart';
 import 'package:patient_app/data/session.dart';
 
 class Dashboard extends StatefulWidget {
@@ -14,9 +11,13 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  User? _user;
-  UserInfo? _userInfo;
-  List<MedicalHistory>? _medicalHistory;
+  List<Map<String, dynamic>>? _medicalHistory = [];
+  String? _fullName;
+  String? _phoneNumber;
+  String? _address;
+  String? _contact;
+  String? _dateOfBirth;
+  String? _email;
   final Map<String, dynamic> user = {
     'name': '',
     'age': 29,
@@ -47,48 +48,63 @@ class _DashboardState extends State<Dashboard> {
       String? email = await SessionManager.getUserSession();  
       if (email != null) {  
         Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
-
+        Map<String, dynamic>? userInfo =
+                      await DBHelper().getPatientsInfoByEmail(email);
           // Fetch UserInfo
-        Map<String, dynamic>? userInfo = await DBHelper().getPatientsInfoByEmail(email);
-        List<Map<String, dynamic>>? userMedicalHistory = await DBHelper().getMedicalHistoryByEmail(email);
         if (userData != null) {  
-          setState(() {  
-            _user = User.fromMap(userData);
-            _userInfo = UserInfo.fromMap(userInfo!);
-            _medicalHistory = userMedicalHistory.map((e) => MedicalHistory.fromMap(e)).toList();
-          });  
+          setState(() {
+            _email = email;
+            _fullName = userData['fullName'];
+            _phoneNumber = userData['phoneNumber'];
+            _address = userInfo?['address'];
+            _contact = userInfo?['contact'];
+            _dateOfBirth = userInfo?['birthday'];
+          });
+          _loadMedicalHistory(email);
         }  
       }  
     } catch (e) {  
       // It's good practice to handle the error, e.g. log it or show feedback  
     } finally {  
       setState(() {
-        user['name'] = _user!.fullName!;  
+        user['name'] = _fullName;
       });  
     }  
   }
   
+  Future<void> _loadMedicalHistory(email) async {
+    try {
+      final records = await DBHelper().getMedicalHistoryByEmail(email);
+      setState(() {
+        _medicalHistory = records;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
+      );
+    }
+  }
    // Import this for JSON serialization  
 
   void _generateQRCode() async {
   // Assuming _user and _userInfo are already fetched and contain the necessary information
-    if (_user != null && _userInfo != null) {
+    if (_fullName != null && _address != null && _phoneNumber != null && _email != null && _contact != null && _dateOfBirth != null && _medicalHistory != []) {
       List<Map<String, dynamic>> userData = [
-        {'Name': _user!.fullName},
-        {'Email': _user!.email},
-        {'Phone Number': _user!.phoneNumber},
-        {'Address': _userInfo!.address},
-        {'Contact': _userInfo!.contact},
-        {'Birthday': _userInfo!.birthday},
+        {'Name': _fullName},
+        {'Email': _email},
+        {'Phone Number': _phoneNumber},
+        {'Address': _address},
+        {'Contact': _contact},
+        {'Birthday': _dateOfBirth},
       ];
       
       // Now add medical history entries
       List<Map<String, dynamic>> medicalHistoryList = [];
       for (var history in _medicalHistory!) {
         medicalHistoryList.add({
-          'Medical History Title': history.title,
-          'Subtitle': history.subtitle,
-          'Description': history.description,
+          'Medical History Title': history['title'],
+          'Subtitle': history['subtitle'],
+          'Description': history['description'],
         });
       }
       
@@ -100,10 +116,6 @@ class _DashboardState extends State<Dashboard> {
       // Convert the list of maps to a JSON string
       String userDataString = userData.join('\n');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("User data: $userDataString")),
-      );
-      
       Navigator.push(
         context,
         MaterialPageRoute(
