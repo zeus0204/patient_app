@@ -302,7 +302,7 @@ class _AddAppointmentState extends State<AddAppointment> {
                       return DropdownMenuItem<String>(
                         value: doctor['email'],
                         child: Text(
-                          doctor['name']!,
+                          doctor['fullName']!,
                           style: const TextStyle(color: Colors.black),
                         ),
                       );

@@ -261,6 +261,7 @@ class _DashboardState extends State<Dashboard> {
           ),
           SizedBox(height: size.height * 0.02),
           Row(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
@@ -273,39 +274,43 @@ class _DashboardState extends State<Dashboard> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today, size: 16, color: Color.fromRGBO(33, 158, 80, 1)),
-                          SizedBox(width: size.width * 0.01),
-                          Flexible(
-                            child: Text(
-                              schedule['day_time'],
-                              style: TextStyle(
-                                color: const Color.fromRGBO(33, 158, 80, 1),
-                                fontWeight: FontWeight.w500,
-                                fontSize: size.width * 0.03,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 16, color: Color.fromRGBO(33, 158, 80, 1)),
+                            SizedBox(width: size.width * 0.01),
+                            Flexible(
+                              child: Text(
+                                schedule['day_time'],
+                                style: TextStyle(
+                                  color: const Color.fromRGBO(33, 158, 80, 1),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: size.width * 0.03,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time, size: 16, color: Color.fromRGBO(33, 158, 80, 1)),
-                          SizedBox(width: size.width * 0.01),
-                          Flexible(
-                            child: Text(
-                              "${schedule['start_time']} - ${schedule['end_time']}",
-                              style: TextStyle(
-                                color: const Color.fromRGBO(33, 158, 80, 1),
-                                fontWeight: FontWeight.w500,
-                                fontSize: size.width * 0.03,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 16, color: Color.fromRGBO(33, 158, 80, 1)),
+                            SizedBox(width: size.width * 0.01),
+                            Flexible(
+                              child: Text(
+                                "${schedule['start_time']} - ${schedule['end_time']}",
+                                style: TextStyle(
+                                  color: const Color.fromRGBO(33, 158, 80, 1),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: size.width * 0.03,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
