@@ -27,6 +27,15 @@ class DBHelper {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getAllDoctors() async {
+    try {
+      final querySnapshot = await _firestore.collection('doctors').get();
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch doctors: $e');
+    }
+  }
+
   // Check if email exists
   Future<bool> emailExists(String email) async {
     try {
@@ -299,6 +308,28 @@ class DBHelper {
       await _firestore.collection('appointments').doc(id).update(updatedData);
     } catch (e) {
       throw Exception('Error updating appointment: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchHospitalsForDoctor (String doctorEmail) async {
+    try {
+      QuerySnapshot doctorSnapshot = await FirebaseFirestore.instance
+          .collection('doctors')
+          .where('email', isEqualTo: doctorEmail)
+          .get();
+
+      if (doctorSnapshot.docs.isNotEmpty) {
+        // Assuming each doctor has a unique `id`
+        DocumentSnapshot doctorDoc = doctorSnapshot.docs.first;
+        List<dynamic> hospitals = doctorDoc['hospitals'] ?? [];
+
+        return hospitals.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching hospitals: $e');
+      return [];
     }
   }
 }

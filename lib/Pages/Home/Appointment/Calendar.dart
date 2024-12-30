@@ -15,11 +15,29 @@ class Calendar extends StatefulWidget {
 class _CalendarState extends State<Calendar> {
   List<Appointment> _appointments = [];
   bool _isLoading = true;
+  List<Map<String, dynamic>> doctors = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchAppointments(); // Fetch appointments when the page loads
+    _fetchAppointments();
+    _fetchDoctors();
+     // Fetch appointments when the page loads
+  }
+
+  Future<void> _fetchDoctors() async {
+    try {
+      List<Map<String, dynamic>> getdoctors = await DBHelper().getAllDoctors();
+      
+      setState(() {
+        doctors = getdoctors;
+      });
+    } catch (e) {
+      // Handle error fetching doctors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching doctors: $e')),
+      );
+    }
   }
 
   Future<void> _fetchAppointments() async {
@@ -63,12 +81,12 @@ class _CalendarState extends State<Calendar> {
     }
   }
 
-  final List<Map<String, String>> doctors = [
-    {'id': '1', 'name': 'Doctor 1'},
-    {'id': '2', 'name': 'Doctor 2'},
-    {'id': '3', 'name': 'Doctor 3'},
-    {'id': '4', 'name': 'Doctor 4'},
-  ];
+  // final List<Map<String, String>> doctors = [
+  //   {'id': '1', 'name': 'Doctor 1'},
+  //   {'id': '2', 'name': 'Doctor 2'},
+  //   {'id': '3', 'name': 'Doctor 3'},
+  //   {'id': '4', 'name': 'Doctor 4'},
+  // ];
 
   final List<Map<String, String>> hospital = [
     {'id': '1', 'name': 'hospital 1'},
@@ -147,7 +165,7 @@ class _CalendarState extends State<Calendar> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddAppointment(id:appointmentId),
+        builder: (context) => AddAppointment(id:appointmentId, doctors: doctors),
       ),
     );
     
@@ -319,7 +337,9 @@ class _CalendarState extends State<Calendar> {
           // Navigate to AddAppointment Page
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddAppointment()),
+            MaterialPageRoute(
+              builder: (context) => AddAppointment(doctors: doctors),
+            ),
           ).then((result) {
             if (result == true) {
               _fetchAppointments(); // Refresh appointments after adding

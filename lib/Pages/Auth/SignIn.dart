@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:patient_app/data/db_helper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,8 +20,6 @@ class _SigninState extends State<Signin> {
   final GlobalKey<FormState> _signInformkey = GlobalKey<FormState>();
   String? _email;
   String? _password;
-
-  final DBHelper _dbHelper = DBHelper();
 
   String hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();

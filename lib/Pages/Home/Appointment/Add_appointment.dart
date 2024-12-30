@@ -5,7 +5,13 @@ import 'package:table_calendar/table_calendar.dart';
 
 class AddAppointment extends StatefulWidget {
   final int? id;
-  const AddAppointment({super.key, this.id});
+  final List<Map<String, dynamic>> doctors;
+
+  const AddAppointment({
+    Key? key,
+    this.id,
+    required this.doctors,
+  }) : super(key: key);
 
   @override
   State<AddAppointment> createState() => _AddAppointmentState();
@@ -14,7 +20,7 @@ class AddAppointment extends StatefulWidget {
 class _AddAppointmentState extends State<AddAppointment> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedTime;
-  String? _selectedDoctorId; // To store selected doctor ID
+  String? _selectedDoctorEmail;
   String? _selectedHospitalId;
 
   @override
@@ -28,28 +34,23 @@ class _AddAppointmentState extends State<AddAppointment> {
   Future<void> _loadAppointmentData() async {
     try {
       if (widget.id != null) {
-        List<Map<String, dynamic>> appointments = await DBHelper().getAppointmentsById(widget.id as String);
+        final appointments = await DBHelper().getAppointmentsById(widget.id.toString());
         if (appointments.isNotEmpty) {
           final appointment = appointments.first;
           setState(() {
             _selectedDate = DateTime.parse(appointment['day']);
-            _selectedDoctorId = appointment['doctor_id'].toString();
+            _selectedDoctorEmail = appointment['doctor_id'].toString();
             _selectedHospitalId = appointment['hospital_id'].toString();
             _selectedTime = appointment['time'];
           });
         }
       }
     } catch (e) {
-      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading appointment data: $e')),
+      );
     }
   }
-
-  final List<Map<String, String>> doctors = [
-    {'id': '1', 'name': 'Doctor 1'},
-    {'id': '2', 'name': 'Doctor 2'},
-    {'id': '3', 'name': 'Doctor 3'},
-    {'id': '4', 'name': 'Doctor 4'},
-  ];
 
   final List<Map<String, String>> hospital = [
     {'id': '1', 'name': 'hospital 1'},
@@ -68,99 +69,95 @@ class _AddAppointmentState extends State<AddAppointment> {
     {'doctor_id': '3', 'hospital_id': '1'},
     {'doctor_id': '4', 'hospital_id': '5'},
     {'doctor_id': '4', 'hospital_id': '6'},
-    // You can add more relationships here
   ];
+
   String _getTimeForIndex(int index) {
-    int hour = 6 + index ~/ 2; // 6 AM + half of index as hours
-    int minute = (index % 2) * 30; // Alternate between 00 and 30 minutes
-    String period = hour < 12 ? 'AM' : 'PM';
-    if (hour > 12) hour -= 12;
-    return '$hour:${minute == 0 ? '00' : '30'} $period';
+    final hour = 6 + index ~/ 2;
+    final minute = (index % 2) * 30;
+    var period = 'AM';
+    if (hour >= 12) {
+      period = 'PM';
+    }
+    return '${hour > 12 ? hour - 12 : hour}:${minute == 0 ? '00' : '30'} $period';
   }
 
-  void _showHospitalSelectionModal(String doctorId) {
-    // Get a list of hospitals available for the selected doctor
-    final hospitalsForDoctor = doctorHospitalRelations
-        .where((relation) => relation['doctor_id'] == doctorId)
-        .map((relation) => relation['hospital_id'])
-        .toSet()
-        .toList();
+  Future<void> _showHospitalSelectionModal(String doctorEmail) async {
+    try {
+      final availableHospitals = await DBHelper().fetchHospitalsForDoctor(doctorEmail);
+      String? selectedHospitalId;
 
-    final availableHospitals = hospital
-        .where((h) => hospitalsForDoctor.contains(h['id']))
-        .toList();
-
-    String? selectedHospitalId = _selectedHospitalId; // Temp variable for local state
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: Colors.white, // Set dialog background color to white
-            title: const Text(
-              'Select Hospital',
-              style: TextStyle(
-                color: Color.fromRGBO(33, 158, 80, 1), // Green text color
-                fontWeight: FontWeight.bold,
+      showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                'Select Hospital',
+                style: TextStyle(
+                  color: Color.fromRGBO(33, 158, 80, 1),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: availableHospitals
-                  .map((hosp) => ListTile(
-                        title: Text(
-                          hosp['name']!,
-                          style: const TextStyle(
-                            color: Colors.black, // Black text for hospitals
-                          ),
-                        ),
-                        leading: Radio<String>(
-                          value: hosp['id']!,
-                          groupValue: selectedHospitalId,
-                          activeColor: const Color.fromRGBO(33, 158, 80, 1), // Green radio button
-                          onChanged: (String? value) {
-                            setState(() {
-                              selectedHospitalId = value; // Update local state
-                            });
-                          },
-                        ),
-                      ))
-                  .toList(),
-            ),
-            actions: [
-              TextButton(
-                onPressed: selectedHospitalId == null
-                    ? null // Disable button if no hospital is selected
-                    : () {
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: availableHospitals.map((hosp) {
+                  return ListTile(
+                    title: Text(
+                      hosp['name']!,
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    leading: Radio<String>(
+                      value: hosp['id']!,
+                      groupValue: selectedHospitalId,
+                      activeColor: const Color.fromRGBO(33, 158, 80, 1),
+                      onChanged: (String? value) {
                         setState(() {
-                          _selectedHospitalId = selectedHospitalId; // Save to main state
+                          selectedHospitalId = value;
                         });
-                        Navigator.pop(context); // Close the modal
                       },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color.fromRGBO(33, 158, 80, 1), // Green text color
-                ),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context), // Close the modal without saving
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color.fromRGBO(33, 158, 80, 1), // Green text color
+              actions: [
+                TextButton(
+                  onPressed: selectedHospitalId == null
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedHospitalId = selectedHospitalId;
+                          });
+                          Navigator.pop(context);
+                        },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color.fromRGBO(33, 158, 80, 1),
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color.fromRGBO(33, 158, 80, 1),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+              ],
+            );
+          },
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching hospitals: $e')),
+      );
+    }
   }
 
   @override
@@ -213,25 +210,23 @@ class _AddAppointmentState extends State<AddAppointment> {
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Colors.white, // White background for today's date
+                    color: Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color.fromRGBO(33, 158, 80, 1), // Green border
-                      width: 2, // Adjust the border width as needed
+                      color: const Color.fromRGBO(33, 158, 80, 1),
+                      width: 2,
                     ),
                   ),
-                  todayTextStyle: const TextStyle(
-                    color: Colors.black, // Text color for today's date
-                  ),
+                  todayTextStyle: const TextStyle(color: Colors.black),
                 ),
                 headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,  // Removes the "2 weeks" button
-                  titleCentered: true,         // Centers the header title
-                  headerPadding: EdgeInsets.all(8), // Adjust header padding
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  headerPadding: EdgeInsets.all(8),
                   titleTextStyle: TextStyle(
-                    fontSize: 24,  // Makes the month and year text bigger
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromRGBO(33, 158, 80, 1)
+                    color: Color.fromRGBO(33, 158, 80, 1),
                   ),
                 ),
               ),
@@ -251,7 +246,7 @@ class _AddAppointmentState extends State<AddAppointment> {
                 scrollDirection: Axis.horizontal,
                 itemCount: 24,
                 itemBuilder: (context, index) {
-                  String time = _getTimeForIndex(index);
+                  final time = _getTimeForIndex(index);
                   return _buildTimeButton(time);
                 },
               ),
@@ -260,7 +255,7 @@ class _AddAppointmentState extends State<AddAppointment> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0), // Add padding if needed
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   'View patient availability',
                   style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
@@ -272,40 +267,40 @@ class _AddAppointmentState extends State<AddAppointment> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: const Color.fromRGBO(33, 158, 80, 1), // Green border color
+                    color: const Color.fromRGBO(33, 158, 80, 1),
                     width: 2.0,
                   ),
-                  borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12.0), // Inner padding
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     hint: const Text(
                       'Select a Doctor',
-                      style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)), // Green hint color
-                    ),
-                    value: _selectedDoctorId,
-                    isExpanded: true, // Ensures the dropdown takes the full width of its container
+                      style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
+                    ), 
+                                        value: _selectedDoctorEmail,
+                    isExpanded: true,
                     dropdownColor: Colors.white,
                     style: const TextStyle(
                       fontSize: 16,
-                      color: Colors.black, // Dropdown text color
+                      color: Colors.black,
                     ),
                     icon: const Icon(
                       Icons.arrow_drop_down,
-                      color: Color.fromRGBO(33, 158, 80, 1), // Green arrow color
+                      color: Color.fromRGBO(33, 158, 80, 1),
                     ),
                     onChanged: (String? newValue) {
                       setState(() {
-                        _selectedDoctorId = newValue;
-                        if (_selectedDoctorId != null) {
-                          _showHospitalSelectionModal(_selectedDoctorId!);
+                        _selectedDoctorEmail = newValue;
+                        if (_selectedDoctorEmail != null) {
+                          _showHospitalSelectionModal(_selectedDoctorEmail!);
                         }
                       });
                     },
-                    items: doctors.map<DropdownMenuItem<String>>((doctor) {
+                    items: widget.doctors.map<DropdownMenuItem<String>>((doctor) {
                       return DropdownMenuItem<String>(
-                        value: doctor['id'],
+                        value: doctor['email'],
                         child: Text(
                           doctor['name']!,
                           style: const TextStyle(color: Colors.black),
@@ -316,7 +311,6 @@ class _AddAppointmentState extends State<AddAppointment> {
                 ),
               ),
             ),
-
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _scheduleAppointment,
@@ -343,7 +337,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   }
 
   Widget _buildTimeButton(String time) {
-    bool isSelected = _selectedTime == time;
+    final isSelected = _selectedTime == time;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: ElevatedButton(
@@ -365,7 +359,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   }
 
   void _scheduleAppointment() async {
-    if (_selectedTime == null || _selectedDoctorId == null || _selectedHospitalId == null) {
+    if (_selectedTime == null || _selectedDoctorEmail == null || _selectedHospitalId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a doctor, hospital, and time!'),
@@ -375,29 +369,27 @@ class _AddAppointmentState extends State<AddAppointment> {
     }
     
     try {
-      String? userEmail = await SessionManager.getUserSession();
+      final userEmail = await SessionManager.getUserSession();
       if (userEmail == null) {
         throw Exception('No user session found. Please log in again.');
       }
       final dbHelper = DBHelper();
       final userId = await dbHelper.getPatientIdByEmail(userEmail);
       final appointmentData = {
-        'user_id': userId, // Replace with actual patient ID (e.g., from logged-in user)
-        'doctor_id': int.parse(_selectedDoctorId!), // Convert ID to integer
-        'hospital_id': int.parse(_selectedHospitalId!), // Convert ID to integer
-        'day': _selectedDate.toIso8601String(), // Store date as ISO 8601 string
-        'time': _selectedTime, // Store selected time
+        'user_id': userId,
+        'doctor_id': int.parse(_selectedDoctorEmail!),
+        'hospital_id': int.parse(_selectedHospitalId!),
+        'day': _selectedDate.toIso8601String(),
+        'time': _selectedTime,
       };
-      
+
       if (widget.id == null) {
-        // Insert new appointment
-        await DBHelper().insertAppointment(appointmentData);
+        await dbHelper.insertAppointment(appointmentData);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Appointment scheduled successfully')),
         );
       } else {
-        // Update existing appointment
-        await DBHelper().updateAppointment(widget.id! as String, appointmentData);
+        await dbHelper.updateAppointment(widget.id.toString(), appointmentData);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Appointment updated successfully')),
         );
@@ -410,3 +402,4 @@ class _AddAppointmentState extends State<AddAppointment> {
     }
   }
 }
+
