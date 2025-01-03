@@ -60,6 +60,19 @@ class DBHelper {
     }
   }
 
+  Future<Map<String, dynamic>?> getDoctorByEmail(String? email) async {
+    final querySnapshot = await _firestore
+    .collection('doctors')
+    .where('email', isEqualTo: email)
+    .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.data();
+    } else {
+      return null;
+    }
+  }
+
   // Update Patients information
   Future<void> updatePatients({
     required String email,
@@ -255,15 +268,14 @@ class DBHelper {
     return null;
   }
 
-  Future<List<Appointment>> getAppointmentsByPatientId(String patientId) async {
+  Future<List<Object?>> getAppointmentsByPatientEmail(String userEmail) async {
     try {
       QuerySnapshot querySnapshot = await _firestore
           .collection('appointments')
-          .where('patient_id', isEqualTo: patientId)
+          .where('userEmail', isEqualTo: userEmail)
           .get();
 
-      return querySnapshot.docs.map((doc) =>
-          Appointment.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       throw Exception('Error fetching appointments: $e');
     }

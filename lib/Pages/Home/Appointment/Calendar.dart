@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:patient_app/data/db_helper.dart';
@@ -6,14 +7,14 @@ import 'package:patient_app/data/session.dart';
 import 'add_appointment.dart'; // Import the AddAppointment page.
 
 class Calendar extends StatefulWidget {
-  const Calendar({Key? key}) : super(key: key);
+  const Calendar({super.key});
 
   @override
   State<Calendar> createState() => _CalendarState();
 }
 
 class _CalendarState extends State<Calendar> {
-  List<Appointment> _appointments = [];
+  List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
   List<Map<String, dynamic>> doctors = [];
 
@@ -22,7 +23,6 @@ class _CalendarState extends State<Calendar> {
     super.initState();
     _fetchAppointments();
     _fetchDoctors();
-     // Fetch appointments when the page loads
   }
 
   Future<void> _fetchDoctors() async {
@@ -46,32 +46,20 @@ class _CalendarState extends State<Calendar> {
     });
 
     try {
-      // Step 1: Get the user's email from the session
       String? userEmail = await SessionManager.getUserSession();
       if (userEmail == null) {
         throw Exception('No user session found. Please log in again.');
       }
-
-      // Step 2: Get the user ID from the database using the email
       final dbHelper = DBHelper();
-      final userId = await dbHelper.getPatientIdByEmail(userEmail);
-      if (userId == null) {
-        throw Exception('No user found for the current session email.');
-      }
 
-      // Step 3: Fetch appointments for the user ID
-      final appointmentsData = await dbHelper.getAppointmentsByPatientId(userId as String);
+      final appointmentsData = await dbHelper.getAppointmentsByPatientEmail(userEmail);
 
-      // Step 4: Update the state with the fetched appointments
       setState(() {
-        _appointments = appointmentsData
-            .map<Appointment>((appointmentMap) => Appointment.fromMap(appointmentMap as Map<String, dynamic>))
-            .toList();
+        _appointments = appointmentsData.cast<Map<String, dynamic>>();
         _isLoading = false; // Hide loading indicator
       });
 
     } catch (e) {
-      // Handle any errors and show a message
       setState(() {
         _isLoading = false; // Hide loading indicator
       });
@@ -81,36 +69,13 @@ class _CalendarState extends State<Calendar> {
     }
   }
 
-  // final List<Map<String, String>> doctors = [
-  //   {'id': '1', 'name': 'Doctor 1'},
-  //   {'id': '2', 'name': 'Doctor 2'},
-  //   {'id': '3', 'name': 'Doctor 3'},
-  //   {'id': '4', 'name': 'Doctor 4'},
-  // ];
-
-  final List<Map<String, String>> hospital = [
-    {'id': '1', 'name': 'hospital 1'},
-    {'id': '2', 'name': 'hospital 2'},
-    {'id': '3', 'name': 'hospital 3'},
-    {'id': '4', 'name': 'hospital 4'},
-    {'id': '5', 'name': 'hospital 5'},
-    {'id': '6', 'name': 'hospital 6'},
-  ];
-
-  String getDoctorName(String doctorId) {
+  String getDoctorName(String? doctorEmail) {
+    if (doctorEmail == null) return 'Unknown Doctor'; // Safeguard against null emails
     final doctor = doctors.firstWhere(
-      (doc) => doc['id'] == doctorId,
-      orElse: () => {'name': 'Unknown Doctor'},
+      (doc) => doc['email'] == doctorEmail,
+      orElse: () => {'fullName': 'Unknown Doctor'},
     );
-    return doctor['name']!;
-  }
-
-  String getHospitalName(String hospitalId) {
-    final hosp = hospital.firstWhere(
-      (hos) => hos['id'] == hospitalId,
-      orElse: () => {'name': 'Unknown Hospital'},
-    );
-    return hosp['name']!;
+    return doctor['fullName'] ?? 'Unknown Doctor'; // Avoid null by providing a default value
   }
 
   String _formatDate(DateTime? date) {
@@ -267,8 +232,18 @@ class _CalendarState extends State<Calendar> {
                           itemCount: _appointments.length,
                           itemBuilder: (context, index) {
                             final appointment = _appointments[index];
-                            final doctorName = getDoctorName(appointment.doctor_id.toString());
-                            final hospitalName = getHospitalName(appointment.hospital_id.toString());
+                            final doctorEmail = appointment['doctorEmail'] as String?;
+                            final hospitalName = appointment['hospitalName'] as String?;
+                            final dayValue = appointment['day'];
+                            final doctorName = getDoctorName(doctorEmail);
+                            DateTime? formattedDay;
+                            if (dayValue is Timestamp) {
+                              formattedDay = dayValue.toDate();
+                            } else if (dayValue is String) {
+                              // Assuming the string is in a valid date format.
+                              formattedDay = DateTime.tryParse(dayValue);
+                            }
+                            final time = appointment['time'] as String?;
                             
                             return Card(
                               color: Colors.white,
@@ -295,8 +270,8 @@ class _CalendarState extends State<Calendar> {
                                       ),
                                       subtitle: Text(
                                         'Hospital: $hospitalName\n'
-                                        'Day: ${_formatDate(appointment.day)}\n'
-                                        'Time: ${appointment.time}',
+                                        'Day: ${formattedDay != null ? _formatDate(formattedDay) : ''}\n'
+                                        'Time: ${time ?? 'N/A'}',
                                       ),
                                     ),
                                   ),
@@ -309,14 +284,14 @@ class _CalendarState extends State<Calendar> {
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.blue),
                                           onPressed: () {
-                                            _editAppointment(appointment.id);                                            
+                                            // _editAppointment(doctorEmail, hospitalName, dayValue, time);                      
                                           },
                                         ),
                                         IconButton(
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           onPressed: () {
                                             // Your delete logic here
-                                            _showDeleteConfirmationDialog(appointment.id!);
+                                            // _showDeleteConfirmationDialog(appointment.id!);
                                           },
                                         ),
                                       ],
