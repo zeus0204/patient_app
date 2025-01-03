@@ -31,7 +31,6 @@ class _CalendarState extends State<Calendar> {
       
       setState(() {
         doctors = getdoctors;
-
       });
     } catch (e) {
       // Handle error fetching doctors

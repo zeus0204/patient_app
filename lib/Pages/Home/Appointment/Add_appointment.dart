@@ -21,7 +21,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedTime;
   String? _selectedDoctorEmail;
-  String? _selectedHospitalId;
+  String? _selectedHospitalName;
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _AddAppointmentState extends State<AddAppointment> {
           setState(() {
             _selectedDate = DateTime.parse(appointment['day']);
             _selectedDoctorEmail = appointment['doctor_id'].toString();
-            _selectedHospitalId = appointment['hospital_id'].toString();
+            _selectedHospitalName = appointment['hospital_id'].toString();
             _selectedTime = appointment['time'];
           });
         }
@@ -51,25 +51,6 @@ class _AddAppointmentState extends State<AddAppointment> {
       );
     }
   }
-
-  final List<Map<String, String>> hospital = [
-    {'id': '1', 'name': 'hospital 1'},
-    {'id': '2', 'name': 'hospital 2'},
-    {'id': '3', 'name': 'hospital 3'},
-    {'id': '4', 'name': 'hospital 4'},
-    {'id': '5', 'name': 'hospital 5'},
-    {'id': '6', 'name': 'hospital 6'},
-  ];
-
-  final List<Map<String, String>> doctorHospitalRelations = [
-    {'doctor_id': '1', 'hospital_id': '1'},
-    {'doctor_id': '1', 'hospital_id': '2'},
-    {'doctor_id': '2', 'hospital_id': '3'},
-    {'doctor_id': '2', 'hospital_id': '4'},
-    {'doctor_id': '3', 'hospital_id': '1'},
-    {'doctor_id': '4', 'hospital_id': '5'},
-    {'doctor_id': '4', 'hospital_id': '6'},
-  ];
 
   String _getTimeForIndex(int index) {
     final hour = 6 + index ~/ 2;
@@ -84,7 +65,8 @@ class _AddAppointmentState extends State<AddAppointment> {
   Future<void> _showHospitalSelectionModal(String doctorEmail) async {
     try {
       final availableHospitals = await DBHelper().fetchHospitalsForDoctor(doctorEmail);
-      String? selectedHospitalId;
+      print(availableHospitals);
+      String? selectedHospitalName;
 
       showDialog(
         context: context,
@@ -108,12 +90,12 @@ class _AddAppointmentState extends State<AddAppointment> {
                       style: const TextStyle(color: Colors.black),
                     ),
                     leading: Radio<String>(
-                      value: hosp['id']!,
-                      groupValue: selectedHospitalId,
+                      value: hosp['name']!,
+                      groupValue: selectedHospitalName,
                       activeColor: const Color.fromRGBO(33, 158, 80, 1),
                       onChanged: (String? value) {
                         setState(() {
-                          selectedHospitalId = value;
+                          selectedHospitalName = value;
                         });
                       },
                     ),
@@ -122,11 +104,11 @@ class _AddAppointmentState extends State<AddAppointment> {
               ),
               actions: [
                 TextButton(
-                  onPressed: selectedHospitalId == null
+                  onPressed: selectedHospitalName == null
                       ? null
                       : () {
                           setState(() {
-                            _selectedHospitalId = selectedHospitalId;
+                            _selectedHospitalName = selectedHospitalName;
                           });
                           Navigator.pop(context);
                         },
@@ -359,7 +341,7 @@ class _AddAppointmentState extends State<AddAppointment> {
   }
 
   void _scheduleAppointment() async {
-    if (_selectedTime == null || _selectedDoctorEmail == null || _selectedHospitalId == null) {
+    if (_selectedTime == null || _selectedDoctorEmail == null || _selectedHospitalName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a doctor, hospital, and time!'),
@@ -374,11 +356,10 @@ class _AddAppointmentState extends State<AddAppointment> {
         throw Exception('No user session found. Please log in again.');
       }
       final dbHelper = DBHelper();
-      final userId = await dbHelper.getPatientIdByEmail(userEmail);
       final appointmentData = {
-        'user_id': userId,
-        'doctor_id': int.parse(_selectedDoctorEmail!),
-        'hospital_id': int.parse(_selectedHospitalId!),
+        'userEmail': userEmail,
+        'doctorEmail': _selectedDoctorEmail!,
+        'hospitalName': _selectedHospitalName!,
         'day': _selectedDate.toIso8601String(),
         'time': _selectedTime,
       };

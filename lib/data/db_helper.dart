@@ -311,25 +311,25 @@ class DBHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchHospitalsForDoctor (String doctorEmail) async {
-    try {
-      QuerySnapshot doctorSnapshot = await FirebaseFirestore.instance
-          .collection('doctors')
-          .where('email', isEqualTo: doctorEmail)
-          .get();
+  Future<List<Map<String, dynamic>>> fetchHospitalsForDoctor(String doctorEmail) async {  
+    try {  
+      final QuerySnapshot doctorSnapshot = await FirebaseFirestore.instance  
+          .collection('doctors')  
+          .where('email', isEqualTo: doctorEmail)  
+          .get();  
 
-      if (doctorSnapshot.docs.isNotEmpty) {
-        // Assuming each doctor has a unique `id`
-        DocumentSnapshot doctorDoc = doctorSnapshot.docs.first;
-        List<dynamic> hospitals = doctorDoc['hospitals'] ?? [];
+      if (doctorSnapshot.docs.isNotEmpty) {  
+        DocumentSnapshot doctorDoc = doctorSnapshot.docs.first;  
 
-        return hospitals.map((doc) => doc.data() as Map<String, dynamic>).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      print('Error fetching hospitals: $e');
-      return [];
-    }
+        // Assuming hospitals are stored directly as maps in the 'hospitals' field  
+        List<dynamic> hospitals = doctorDoc['hospitals'] ?? [];  
+        return hospitals.map((hosp) => hosp as Map<String, dynamic>).toList();  
+      } else {  
+        return [];  
+      }  
+    } catch (e) {  
+      print('Error fetching hospitals: $e');  
+      return [];  
+    }  
   }
 }
