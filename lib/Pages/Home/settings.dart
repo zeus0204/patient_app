@@ -4,8 +4,8 @@ import 'package:patient_app/data/db_helper.dart';
 import 'package:patient_app/data/model/User.dart';
 import 'package:patient_app/data/session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Auth/SignIn.dart';
-import '../Home/Profile/Profile.dart';
+import '../Auth/sign_in.dart';
+import '../Home/Profile/profile.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);

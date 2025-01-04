@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:patient_app/data/model/Appointment.dart';
+import 'package:patient_app/data/model/appointment.dart';
 
 class DBHelper {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -343,5 +343,26 @@ class DBHelper {
       print('Error fetching hospitals: $e');  
       return [];  
     }  
+  }
+
+  Future<String> generateQRData(
+    String fullName,
+    String phoneNumber,
+    String address,
+    String contact,
+    String dateOfBirth,
+    String email,
+    List<Map<String, dynamic>> medicalHistory,
+  ) async {
+    final userData = {
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'contact': contact,
+      'dateOfBirth': dateOfBirth,
+      'email': email,
+      'medicalHistory': medicalHistory,
+    };
+    return Uri.encodeFull(userData.toString());
   }
 }

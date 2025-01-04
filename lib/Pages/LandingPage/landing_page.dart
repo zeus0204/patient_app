@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../Auth/SignIn.dart'; // Ensure the import path is correct
-import '../Home/Home.dart'; // Ensure the import path is correct
+import '../Auth/sign_in.dart'; // Ensure the import path is correct
+import '../Home/home.dart'; // Ensure the import path is correct
 import '../../data/session.dart'; // Import the session manager
 
 class LandingPage extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:patient_app/Pages/Home/Appointment/Calendar.dart';
-import 'package:patient_app/Pages/Home/Dashboard.dart';
-import 'package:patient_app/Pages/Home/Settings.dart';
+import 'package:patient_app/Pages/Home/Appointment/calendar.dart';
+import 'package:patient_app/Pages/Home/dashboard.dart';
+import 'package:patient_app/Pages/Home/settings.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

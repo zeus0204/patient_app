@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'SignIn.dart';
+import 'sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 class Signup extends StatefulWidget {  
   const Signup({super.key});  

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../Home/Dashboard.dart'; // Import the Dashboard page
-import '../Home/Appointment/Calendar.dart'; // Import the Calendar page
+import '../Home/dashboard.dart'; // Import the Dashboard page
+import '../Home/Appointment/calendar.dart'; // Import the Calendar page
 
 class BottomNavIcons extends StatefulWidget {
   const BottomNavIcons({super.key});

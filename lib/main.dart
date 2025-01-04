@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import './Pages/LandingPage/LandingPage.dart';
+import './Pages/LandingPage/landing_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {

@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:patient_app/Pages/Home/Profile/EditProfile.dart';  
-import '../../../data/db_helper.dart';  
+import '../../../data/db_helper.dart';
 import '../../../data/session.dart';  
 import '../../../data/model/User.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'edit_profile.dart';
 
 class ProfilePage extends StatefulWidget {  
   const ProfilePage({super.key});  
