@@ -9,6 +9,7 @@ import 'package:patient_app/widgets/doctor_list.dart';
 import 'package:patient_app/widgets/schedule_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -236,197 +237,220 @@ class _DashboardState extends State<Dashboard> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: AppColors.primaryColor,
+      backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
       body: Column(
         children: [
-          _buildHeader(size),
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(AppStyles.topBorderRadius),
-                  topRight: Radius.circular(AppStyles.topBorderRadius),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppStyles.topBorderRadius),
-                  topRight: Radius.circular(AppStyles.topBorderRadius),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: size.height * 0.01),
-                      StreamBuilder<List<Schedule>>(
-                        stream: _getSchedulesStream(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: Text('Error: ${snapshot.error}'),
-                            );
-                          }
-
-                          final schedules = snapshot.data ?? [];
-                          if (schedules.isEmpty) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No upcoming appointments',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-
-                          return ScheduleCard(
-                            schedules: schedules,
-                            size: size,
-                            doctors: doctors,
-                            appointmentId: schedules.isNotEmpty ? schedules[0].id : null,
-                          );
-                        },
-                      ),
-                      SizedBox(height: size.height * 0.02),
-                      DoctorList(
-                        doctors: doctors.map((doc) => Doctor(
-                          name: doc['fullName'] ?? 'Unknown Doctor',
-                          updatedHistory: 'Last Updated: 2h ago',
-                          avatar: 'assets/images/avatar.png',
-                        )).toList(),
-                        size: size,
-                      ),
-                      SizedBox(height: size.height * 0.03),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
-                        child: _buildActionButtons(size),
-                      ),
-                      SizedBox(height: size.height * 0.02),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(Size size) {
-    return Container(
-      color: AppColors.primaryColor,
-      padding: EdgeInsets.all(size.width * 0.04),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: size.width * 0.05),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Top Section (green)
+          Container(
+            color: const Color.fromRGBO(33, 158, 80, 1),
+            padding: EdgeInsets.all(size.width * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "${AppStrings.heyUser}${user['name']}",
-                      style: TextStyle(
-                        fontSize: size.width * 0.04,
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w400,
+                    Padding(
+                      padding: EdgeInsets.only(left: size.width * 0.05),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hey, ${user['name']}",
+                            style: GoogleFonts.poppins(
+                              fontSize: size.width * 0.04,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Text(
+                            "Today is a busy day",
+                            style: GoogleFonts.poppins(
+                              fontSize: size.width * 0.025,
+                              color: Colors.white.withOpacity(0.85),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      AppStrings.busyDay,
-                      style: TextStyle(
-                        fontSize: size.width * 0.025,
-                        color: AppColors.white.withOpacity(0.85),
+                    Container(
+                      margin: EdgeInsets.only(right: size.width * 0.05),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.notifications, color: Color.fromRGBO(33, 158, 80, 1)),
+                        onPressed: () {},
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                margin: EdgeInsets.only(right: size.width * 0.05),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(10),
+                SizedBox(height: size.height * 0.02),
+                _buildScheduleCard(size),
+              ],
+            ),
+          ),
+
+          // Body Section (white with border radius)
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                child: IconButton(
-                  icon: Icon(Icons.notifications, color: AppColors.primaryColor),
-                  onPressed: () {
-                    // TODO: Implement notification functionality
-                  },
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: size.height * 0.01),
+                    Expanded(
+                      child: _buildRecentRecords(size),
+                    ),
+                    SizedBox(height: size.height * 0.02),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(Size size) {
-    return Row(
-      children: [
-        _buildActionButton(
-          size,
-          AppStrings.getQRCode,
-          Icons.qr_code,
-          _generateQRCode,
-        ),
-        _buildActionButton(
-          size,
-          AppStrings.addNotes,
-          Icons.note_add,
-          () {},
-        ),
-      ],
+  Widget _buildScheduleCard(Size size) {
+    return StreamBuilder<List<Schedule>>(
+      stream: _getSchedulesStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
+        }
+        
+        final schedules = snapshot.data ?? [];
+        if (schedules.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'No upcoming appointments',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          );
+        }
+        
+        return ScheduleCard(
+          schedules: schedules,
+          size: size,
+          doctors: doctors,
+          appointmentId: schedules.isNotEmpty ? schedules[0].id : null,
+        );
+      },
     );
   }
 
-  Widget _buildActionButton(
-    Size size,
-    String text,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryLightColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+  Widget _buildRecentRecords(Size size) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: size.width * 0.1, vertical: size.height * 0.02),
+      child: Container(
+        padding: EdgeInsets.all(size.width * 0.04),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(33, 158, 80, 1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Doctors",
+              style: GoogleFonts.poppins(
+                fontSize: size.width * 0.045,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-          child: FittedBox(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: AppColors.primaryColor,
+            SizedBox(height: size.height * 0.01),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  color: Colors.white,
+                  child: ListView.builder(
+                    itemCount: doctors.length,
+                    itemBuilder: (context, index) {
+                      final doctor = doctors[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: AssetImage('assets/images/avatar.png'),
+                        ),
+                        title: Text(
+                          doctor['fullName'] ?? 'Unknown Doctor',
+                          style: GoogleFonts.poppins(fontSize: size.width * 0.035),
+                        ),
+                        subtitle: Text(
+                          'Last Updated: 2h ago',
+                          style: GoogleFonts.poppins(fontSize: size.width * 0.03),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                        onTap: () {},
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(width: 5),
-                Text(
-                  text,
-                  style: const TextStyle(color: AppColors.primaryColor),
+              ),
+            ),
+            SizedBox(height: size.height * 0.03),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+                    child: ElevatedButton(
+                      onPressed: _generateQRCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(227, 243, 208, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: FittedBox(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.qr_code,
+                              color: Color.fromRGBO(33, 158, 80, 1),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              "Scan QR Code",
+                              style: GoogleFonts.poppins(color: Color.fromRGBO(33, 158, 80, 1)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
+            )
+          ],
         ),
       ),
     );
