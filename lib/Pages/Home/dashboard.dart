@@ -187,30 +187,44 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  Future<void> _generateQRCode() async {
-    if (_medicalHistory != null && _medicalHistory!.isNotEmpty) {
-      final dbHelper = DBHelper();
-      final userDataString = await dbHelper.generateQRData(
-        _fullName ?? '',
-        _phoneNumber ?? '',
-        _address ?? '',
-        _contact ?? '',
-        _dateOfBirth ?? '',
-        _email ?? '',
-        _medicalHistory ?? [],
-      );
-
-      if (!mounted) return;
+  void _generateQRCode() async {
+  // Assuming _user and _userInfo are already fetched and contain the necessary information
+    if (_fullName != null && _address != null && _phoneNumber != null && _email != null && _contact != null && _dateOfBirth != null && _medicalHistory != []) {
+      List<Map<String, dynamic>> userData = [
+        {'Name': _fullName},
+        {'Email': _email},
+        {'Phone Number': _phoneNumber},
+        {'Address': _address},
+        {'Contact': _contact},
+        {'Birthday': _dateOfBirth},
+      ];
       
+      // Now add medical history entries
+      List<Map<String, dynamic>> medicalHistoryList = [];
+      for (var history in _medicalHistory!) {
+        medicalHistoryList.add({
+          'Medical History Title': history['title'],
+          'Subtitle': history['subtitle'],
+          'Description': history['description'],
+        });
+      }
+      
+      // Add the medical history list to the main user data
+      userData.add({
+        'Medical History': medicalHistoryList
+      });
+
+      // Convert the list of maps to a JSON string
+      String userDataString = userData.join('\n');
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => QRCodePage(data: userDataString),
+          builder: (context) => QRCodePage(data: userDataString), // Pass the JSON string
         ),
       );
     } else {
-      if (!mounted) return;
-      
+      // Handle case where user data is not available
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("User data not available. Please make your profile!")),
       );
