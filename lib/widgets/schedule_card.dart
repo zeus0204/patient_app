@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:patient_app/models/schedule.dart';
 import 'package:patient_app/utils/constants.dart';
+import 'package:patient_app/Pages/Home/Appointment/add_appointment.dart';
 
 class ScheduleCard extends StatelessWidget {
   final List<Schedule> schedules;
   final Size size;
+  final List<Map<String, dynamic>> doctors;
+  final String? appointmentId;
 
   const ScheduleCard({
     super.key,
     required this.schedules,
     required this.size,
+    required this.doctors,
+    this.appointmentId,
   });
 
   @override
@@ -18,10 +23,10 @@ class ScheduleCard extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: size.height * 0.28,
+          height: size.height,
           child: FlutterCarousel(
             options: CarouselOptions(
-              height: size.height * 0.28,
+              height: size.height,
               viewportFraction: 0.93,
               enlargeCenterPage: true,
               autoPlay: schedules.length > 1,
@@ -35,15 +40,25 @@ class ScheduleCard extends StatelessWidget {
                   return Container(
                     width: MediaQuery.of(context).size.width,
                     margin: EdgeInsets.symmetric(horizontal: size.width * 0.01),
-                    padding: EdgeInsets.all(size.width * 0.04),
+                    padding: EdgeInsets.all(size.width * 0.02),
                     decoration: AppStyles.cardDecoration,
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildDoctorInfo(schedule),
-                        SizedBox(height: size.height * 0.02),
-                        _buildScheduleInfo(schedule),
-                        SizedBox(height: size.height * 0.02),
-                        _buildActionButtons(),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildDoctorInfo(schedule),
+                                SizedBox(height: 20),
+                                _buildScheduleInfo(schedule),
+                                SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _buildActionButtons(context),
                       ],
                     ),
                   );
@@ -61,27 +76,34 @@ class ScheduleCard extends StatelessWidget {
       children: [
         CircleAvatar(
           backgroundImage: AssetImage(schedule.avatar),
-          radius: size.width * 0.08,
+          radius: size.width * 0.06,
         ),
         SizedBox(width: size.width * 0.04),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              schedule.doctor,
-              style: TextStyle(
-                fontSize: size.width * 0.045,
-                fontWeight: FontWeight.bold,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                schedule.doctor,
+                style: TextStyle(
+                  fontSize: size.width * 0.04,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Text(
-              schedule.address,
-              style: TextStyle(
-                color: AppColors.grey,
-                fontSize: size.width * 0.035,
+              Text(
+                schedule.address,
+                style: TextStyle(
+                  color: AppColors.grey,
+                  fontSize: size.width * 0.035,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -144,16 +166,26 @@ class ScheduleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+            padding: EdgeInsets.symmetric(horizontal: size.width * 0.03),
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddAppointment(
+                      id: appointmentId,
+                      doctors: doctors,
+                    ),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.primaryColor),
                 shape: RoundedRectangleBorder(
@@ -174,7 +206,7 @@ class ScheduleCard extends StatelessWidget {
         ),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+            padding: EdgeInsets.symmetric(horizontal: size.width * 0.01),
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(

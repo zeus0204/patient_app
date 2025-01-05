@@ -45,19 +45,19 @@ class _CalendarState extends State<Calendar> {
         throw Exception('No user session found. Please log in again.');
       }
 
-      // Get real-time updates from Firestore
       yield* FirebaseFirestore.instance
           .collection('appointments')
           .where('userEmail', isEqualTo: userEmail)
           .snapshots()
           .map((snapshot) {
-        return snapshot.docs.map((doc) {
+        final appointments = snapshot.docs.map((doc) {
           final data = doc.data();
           return {
             ...data,
             'id': doc.id,
           };
         }).toList();
+        return appointments;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

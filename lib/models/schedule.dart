@@ -5,6 +5,7 @@ class Schedule {
   final String startTime;
   final String endTime;
   final String avatar;
+  final String id;
 
   Schedule({
     required this.doctor,
@@ -13,6 +14,7 @@ class Schedule {
     required this.startTime,
     required this.endTime,
     required this.avatar,
+    required this.id,
   });
 
   factory Schedule.fromMap(Map<String, dynamic> map) {
@@ -23,6 +25,7 @@ class Schedule {
       startTime: map['start_time'] as String,
       endTime: map['end_time'] as String,
       avatar: map['avatar'] as String,
+      id: map['id'] as String,
     );
   }
 
@@ -34,6 +37,7 @@ class Schedule {
       'start_time': startTime,
       'end_time': endTime,
       'avatar': avatar,
+      'id': id,
     };
   }
 }
