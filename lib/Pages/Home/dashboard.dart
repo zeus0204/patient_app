@@ -191,27 +191,27 @@ class _DashboardState extends State<Dashboard> {
   // Assuming _user and _userInfo are already fetched and contain the necessary information
     if (_fullName != null && _address != null && _phoneNumber != null && _email != null && _contact != null && _dateOfBirth != null && _medicalHistory != []) {
       List<Map<String, dynamic>> userData = [
-        {'Name': _fullName},
-        {'Email': _email},
-        {'Phone Number': _phoneNumber},
-        {'Address': _address},
-        {'Contact': _contact},
-        {'Birthday': _dateOfBirth},
+        {'name': _fullName},
+        {'email': _email},
+        {'phoneNumber': _phoneNumber},
+        {'address': _address},
+        {'contact': _contact},
+        {'birthday': _dateOfBirth},
       ];
       
       // Now add medical history entries
       List<Map<String, dynamic>> medicalHistoryList = [];
       for (var history in _medicalHistory!) {
         medicalHistoryList.add({
-          'Medical History Title': history['title'],
-          'Subtitle': history['subtitle'],
-          'Description': history['description'],
+          'title': history['title'],
+          'subtitle': history['subtitle'],
+          'description': history['description'],
         });
       }
       
       // Add the medical history list to the main user data
       userData.add({
-        'Medical History': medicalHistoryList
+        'medicalHistory': medicalHistoryList
       });
 
       // Convert the list of maps to a JSON string
