@@ -147,7 +147,6 @@ class _DashboardState extends State<Dashboard> {
       if (email != null) {
         final userData = await DBHelper().getPatientsByEmail(email);
         final userInfo = await DBHelper().getPatientsInfoByEmail(email);
-        final history = await DBHelper().getMedicalHistoryByEmail(email);
 
         if (userData != null && mounted) {
           setState(() {
@@ -158,14 +157,31 @@ class _DashboardState extends State<Dashboard> {
             _contact = userInfo?['contact'];
             _dateOfBirth = userInfo?['birthday'];
             user['name'] = userData['fullName'];
-            _medicalHistory = history;
           });
+          await _loadMedicalHistory(email);
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading user data: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadMedicalHistory(String email) async {
+    try {
+      final history = await DBHelper().getMedicalHistoryByEmail(email);
+      if (mounted) {
+        setState(() {
+          _medicalHistory = history;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
         );
       }
     }
@@ -204,117 +220,144 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: size.height * 0.02),
-                          _buildUserInfo(),
-                          SizedBox(height: size.height * 0.01),
-                          StreamBuilder<List<Schedule>>(
-                            stream: _getSchedulesStream(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
-                              }
-                              
-                              if (snapshot.hasError) {
-                                return Center(
-                                  child: Text('Error: ${snapshot.error}'),
-                                );
-                              }
-                              
-                              final schedules = snapshot.data ?? [];
-                              if (schedules.isEmpty) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: Text(
-                                      'No upcoming appointments',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                              
-                              return ScheduleCard(
-                                schedules: schedules,
-                                size: Size(size.width, 200), // Reduced from 0.35 to 0.25
-                                doctors: doctors,
-                                appointmentId: schedules.isNotEmpty ? schedules[0].id : null,
-                              );
-                            },
-                          ),
-                          SizedBox(height: size.height * 0.02),
-                          DoctorList(
-                            doctors: doctors.map((doc) => Doctor(
-                              name: doc['fullName'] ?? 'Unknown Doctor',
-                              updatedHistory: 'Last Updated: 2h ago',
-                              avatar: 'assets/images/avatar.png',
-                            )).toList(),
-                            size: Size(size.width, constraints.maxHeight * 0.25),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+      backgroundColor: AppColors.primaryColor,
+      body: Column(
+        children: [
+          _buildHeader(size),
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(AppStyles.topBorderRadius),
+                  topRight: Radius.circular(AppStyles.topBorderRadius),
                 ),
-                Container(
-                  padding: EdgeInsets.all(size.width * 0.04),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: const Offset(0, -3),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppStyles.topBorderRadius),
+                  topRight: Radius.circular(AppStyles.topBorderRadius),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: size.height * 0.01),
+                      StreamBuilder<List<Schedule>>(
+                        stream: _getSchedulesStream(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text('Error: ${snapshot.error}'),
+                            );
+                          }
+
+                          final schedules = snapshot.data ?? [];
+                          if (schedules.isEmpty) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No upcoming appointments',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ScheduleCard(
+                            schedules: schedules,
+                            size: size,
+                            doctors: doctors,
+                            appointmentId: schedules.isNotEmpty ? schedules[0].id : null,
+                          );
+                        },
                       ),
+                      SizedBox(height: size.height * 0.02),
+                      DoctorList(
+                        doctors: doctors.map((doc) => Doctor(
+                          name: doc['fullName'] ?? 'Unknown Doctor',
+                          updatedHistory: 'Last Updated: 2h ago',
+                          avatar: 'assets/images/avatar.png',
+                        )).toList(),
+                        size: size,
+                      ),
+                      SizedBox(height: size.height * 0.03),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
+                        child: _buildActionButtons(size),
+                      ),
+                      SizedBox(height: size.height * 0.02),
                     ],
                   ),
-                  child: _buildActionButtons(size),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildUserInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "${AppStrings.heyUser}${user['name']}",
-          style: TextStyle(
-            fontSize: 24,
-            color: AppColors.primaryColor,
-            fontWeight: FontWeight.w400,
+  Widget _buildHeader(Size size) {
+    return Container(
+      color: AppColors.primaryColor,
+      padding: EdgeInsets.all(size.width * 0.04),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: size.width * 0.05),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${AppStrings.heyUser}${user['name']}",
+                      style: TextStyle(
+                        fontSize: size.width * 0.04,
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    Text(
+                      AppStrings.busyDay,
+                      style: TextStyle(
+                        fontSize: size.width * 0.025,
+                        color: AppColors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(right: size.width * 0.05),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.notifications, color: AppColors.primaryColor),
+                  onPressed: () {
+                    // TODO: Implement notification functionality
+                  },
+                ),
+              ),
+            ],
           ),
-        ),
-        Text(
-          AppStrings.busyDay,
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.primaryColor.withOpacity(0.85),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
