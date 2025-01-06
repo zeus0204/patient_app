@@ -189,8 +189,13 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void _generateQRCode() async {
-  // Assuming _user and _userInfo are already fetched and contain the necessary information
-    if (_fullName != null && _address != null && _phoneNumber != null && _email != null && _contact != null && _dateOfBirth != null && _medicalHistory != []) {
+    if (_fullName != null &&
+        _address != null &&
+        _phoneNumber != null &&
+        _email != null &&
+        _contact != null &&
+        _dateOfBirth != null &&
+        _medicalHistory != []) {
       List<Map<String, dynamic>> userData = [
         {'name': _fullName},
         {'email': _email},
@@ -199,8 +204,8 @@ class _DashboardState extends State<Dashboard> {
         {'contact': _contact},
         {'birthday': _dateOfBirth},
       ];
-      
-      // Now add medical history entries
+
+      // Add medical history entries
       List<Map<String, dynamic>> medicalHistoryList = [];
       for (var history in _medicalHistory!) {
         medicalHistoryList.add({
@@ -209,25 +214,51 @@ class _DashboardState extends State<Dashboard> {
           'description': history['description'],
         });
       }
-      
-      // Add the medical history list to the main user data
-      userData.add({
-        'medicalHistory': medicalHistoryList
-      });
 
-      // Convert the list of maps to a JSON string
-      String userDataString = userData.join('\n');
+      userData.add({'medicalHistory': medicalHistoryList});
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => QRCodePage(data: userDataString), // Pass the JSON string
-        ),
-      );
+      try {
+        // Query the records collection where patientEmail is equal to _email
+        QuerySnapshot recordsSnapshot = await FirebaseFirestore.instance
+            .collection('records')
+            .where('patientEmail', isEqualTo: _email)
+            .get();
+
+        List<Map<String, dynamic>> recordsList = [];
+        for (var record in recordsSnapshot.docs) {
+          recordsList.add({
+            'doctorEmail': record['doctorEmail'],
+            'patientEmail': record['patientEmail'],
+            'title': record['title'],
+            'subtitle': record['subtitle'],
+            'description': record['description'],
+            'time': record['time']
+          });
+        }
+
+        // Add the fetched records to the user data
+        userData.add({'records': recordsList});
+
+        // Convert the list of maps to a JSON string
+        String userDataString = userData.join('\n');
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QRCodePage(data: userDataString),
+          ),
+        );
+      } catch (e) {
+        // Handle potential errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching records: $e")),
+        );
+      }
     } else {
       // Handle case where user data is not available
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User data not available. Please make your profile!")),
+        const SnackBar(
+            content: Text("User data not available. Please make your profile!")),
       );
     }
   }
