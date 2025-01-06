@@ -223,22 +223,6 @@ class _DashboardState extends State<Dashboard> {
             .collection('records')
             .where('patientEmail', isEqualTo: _email)
             .get();
-
-        List<Map<String, dynamic>> recordsList = [];
-        for (var record in recordsSnapshot.docs) {
-          recordsList.add({
-            'doctorEmail': record['doctorEmail'],
-            'patientEmail': record['patientEmail'],
-            'title': record['title'],
-            'subtitle': record['subtitle'],
-            'description': record['description'],
-            'time': record['time']
-          });
-        }
-
-        // Add the fetched records to the user data
-        userData.add({'records': recordsList});
-
         // Convert the list of maps to a JSON string
         String userDataString = userData.join('\n');
 
