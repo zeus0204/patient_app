@@ -25,6 +25,8 @@ class _AddAppointmentState extends State<AddAppointment> {
   String? _selectedHospitalName;
   bool _isInitialized = false;
   bool _isLoading = false;
+  Set<String> _bookedTimeSlots = {};
+  bool _allSlotsBooked = false;
 
   @override
   void didChangeDependencies() {
@@ -192,6 +194,50 @@ class _AddAppointmentState extends State<AddAppointment> {
     }
   }
 
+  void _checkBookedAppointments() async {
+    if (_selectedDoctorEmail == null || !mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _bookedTimeSlots.clear();
+      _allSlotsBooked = false;
+    });
+
+    try {
+      final startOfDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('doctorEmail', isEqualTo: _selectedDoctorEmail)
+          .where('day', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+          .where('day', isLessThan: endOfDay.toIso8601String())
+          .get();
+
+      if (!mounted) return;
+
+      setState(() {
+        for (var doc in querySnapshot.docs) {
+          _bookedTimeSlots.add(doc['time']);
+        }
+        // Check if all slots are booked (24 time slots in total)
+        _allSlotsBooked = _bookedTimeSlots.length >= 24;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error checking booked appointments: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -240,7 +286,11 @@ class _AddAppointmentState extends State<AddAppointment> {
                       onDaySelected: (selectedDay, focusedDay) {
                         setState(() {
                           _selectedDate = selectedDay;
+                          _selectedTime = null;  // Reset selected time when date changes
                         });
+                        if (_selectedDoctorEmail != null) {
+                          _checkBookedAppointments();
+                        }
                       },
                       calendarStyle: CalendarStyle(
                         selectedDecoration: const BoxDecoration(
@@ -331,8 +381,10 @@ class _AddAppointmentState extends State<AddAppointment> {
                           onChanged: (String? newValue) {
                             setState(() {
                               _selectedDoctorEmail = newValue;
+                              _selectedTime = null;  // Reset selected time when doctor changes
                               if (_selectedDoctorEmail != null) {
                                 _showHospitalSelectionModal(_selectedDoctorEmail!);
+                                _checkBookedAppointments();
                               }
                             });
                           },
@@ -351,7 +403,9 @@ class _AddAppointmentState extends State<AddAppointment> {
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: _scheduleAppointment,
+                    onPressed: _allSlotsBooked || _selectedTime == null || _selectedDoctorEmail == null || _selectedHospitalName == null 
+                        ? null 
+                        : _scheduleAppointment,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
                       padding: const EdgeInsets.symmetric(
@@ -376,22 +430,38 @@ class _AddAppointmentState extends State<AddAppointment> {
 
   Widget _buildTimeButton(String time) {
     final isSelected = _selectedTime == time;
+    final isBooked = _bookedTimeSlots.contains(time);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: isBooked ? null : () {
           setState(() {
             _selectedTime = time;
           });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? const Color.fromRGBO(33, 158, 80, 1) : Colors.grey[200],
-          foregroundColor: isSelected ? Colors.white : Colors.black,
+          backgroundColor: isBooked 
+              ? Colors.grey 
+              : isSelected 
+                  ? const Color.fromRGBO(33, 158, 80, 1) 
+                  : Colors.grey[200],
+          foregroundColor: isBooked 
+              ? Colors.white 
+              : isSelected 
+                  ? Colors.white 
+                  : Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: Text(time),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(time),
+            if (isBooked)
+              const Icon(Icons.block, size: 16),
+          ],
+        ),
       ),
     );
   }

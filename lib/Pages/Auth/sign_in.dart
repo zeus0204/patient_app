@@ -20,6 +20,7 @@ class _SigninState extends State<Signin> {
   final GlobalKey<FormState> _signInformkey = GlobalKey<FormState>();
   String? _email;
   String? _password;
+  bool _isLoading = false;
 
   String hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();
@@ -27,6 +28,10 @@ class _SigninState extends State<Signin> {
 
   Future<void> _login() async {
     if (_signInformkey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       _signInformkey.currentState!.save();
 
       try {
@@ -37,11 +42,13 @@ class _SigninState extends State<Signin> {
 
         await SessionManager.saveUserSession(_email!);
         
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Successfully')));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Home()), // Replace with your home page
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Successfully')));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Home()), // Replace with your home page
+          );
+        }
 
       } on FirebaseAuthException catch (e) {
         String errorMessage;
@@ -52,7 +59,15 @@ class _SigninState extends State<Signin> {
         } else {
           errorMessage = 'An error occurred. Please try again.';
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -171,8 +186,17 @@ class _SigninState extends State<Signin> {
                           borderRadius: BorderRadius.circular(10),  
                         ),  
                       ),  
-                      onPressed: _login,  
-                      child: Text('Login', style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w400)),  
+                      onPressed: _isLoading ? null : _login,  
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text('Login', style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w400)),
                     ),  
                   ),  
                   Column(  

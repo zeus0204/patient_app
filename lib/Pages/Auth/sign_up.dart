@@ -19,9 +19,14 @@ class _SignupState extends State<Signup> {
   String? _phoneNumber;
   String? _email;
   String? _password;
+  bool _isLoading = false;
 
   Future<void> _submitForm() async {
     if (_signupFormKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       _signupFormKey.currentState!.save();
       try {
           UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -37,11 +42,13 @@ class _SignupState extends State<Signup> {
 
           await DBHelper().insertPatients(patientData);
 
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User signed up successfully!')));
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const Signin()),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User signed up successfully!')));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Signin()),
+            );
+          }
       } on FirebaseAuthException catch (e) {
           debugPrint("FirebaseAuthException: ${e.message}");
           String errorMessage;
@@ -52,12 +59,21 @@ class _SignupState extends State<Signup> {
           } else {
             errorMessage = 'An error occurred: ${e.message ?? 'Unknown error'}';
           }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+          }
       } catch (e) {
           debugPrint("Unexpected error: $e");
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Unexpected error occurred. Try again.")));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Unexpected error occurred. Try again.")));
+          }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
-
     }
   }
 
@@ -265,8 +281,17 @@ class _SignupState extends State<Signup> {
                           borderRadius: BorderRadius.circular(10),  
                         ),  
                       ),  
-                      onPressed: _submitForm,  
-                      child: Text('Sign Up', style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w400)),  
+                      onPressed: _isLoading ? null : _submitForm,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text('Sign Up', style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w400)),
                     ),  
                   ),  
                   Column(  
