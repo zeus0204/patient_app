@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:patient_app/data/db_helper.dart';
-import 'package:patient_app/data/model/appointment.dart';
 import 'package:patient_app/data/session.dart';
 import 'add_appointment.dart'; 
 
@@ -15,7 +14,6 @@ class Calendar extends StatefulWidget {
 
 class _CalendarState extends State<Calendar> {
   List<Map<String, dynamic>> doctors = [];
-  final DBHelper _dbHelper = DBHelper();
   bool _isDeleting = false;
   String? _deletingAppointmentId;
 
@@ -247,10 +245,11 @@ class _CalendarState extends State<Calendar> {
                       final appointment = appointments[index];
                       final date = DateTime.tryParse(appointment['day'] ?? '');
                       return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
                         elevation: 2,
-                        margin: const EdgeInsets.only(bottom: 16),
+                        color: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
@@ -329,7 +328,11 @@ class _CalendarState extends State<Calendar> {
           ),
         ),
         backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
-        child: const Icon(Icons.add),
+        child: const Icon(
+          Icons.add,
+          size: 30,
+          color: Colors.white,
+        ),
       ),
     );
   }

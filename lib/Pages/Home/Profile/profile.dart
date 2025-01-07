@@ -93,9 +93,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 formattedTime = DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
               }
               return Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                elevation: 2,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: ListTile(
                   title: Text(

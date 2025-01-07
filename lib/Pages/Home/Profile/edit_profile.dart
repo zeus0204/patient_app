@@ -20,6 +20,7 @@ class _EditProfileState extends State<EditProfile> {
   String? _contact;
   String? _dateOfBirth;
   File? _imageFile;
+  bool _isLoading = false;
 
   final _fullNameController = TextEditingController();
   final _phoneNumberController = TextEditingController();
@@ -92,6 +93,9 @@ class _EditProfileState extends State<EditProfile> {
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true; // Start loading
+      });
       _formKey.currentState!.save();
       try {
         String? email = await SessionManager.getUserSession();
@@ -123,6 +127,10 @@ class _EditProfileState extends State<EditProfile> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
+      } finally {
+        setState(() {
+          _isLoading = false; // Stop loading
+        });
       }
     }
   }
@@ -220,7 +228,7 @@ class _EditProfileState extends State<EditProfile> {
                 ),
               Center(
                 child: ElevatedButton(
-                  onPressed: _saveProfile,
+                  onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
                     padding: const EdgeInsets.symmetric(
@@ -229,8 +237,21 @@ class _EditProfileState extends State<EditProfile> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Save Changes',
-                      style: TextStyle(color: Colors.white)),
+                  child: SizedBox(
+                    width: 150, // Set a fixed width
+                    height: 24, // Set a fixed height to maintain size
+                    child: Center(
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
+                          : const Text(
+                              'Save Changes',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                    ),
+                  ),
                 ),
               ),
             ],

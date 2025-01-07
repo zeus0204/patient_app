@@ -23,10 +23,10 @@ class ScheduleCard extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 270,
+          height: 210,
           child: FlutterCarousel(
             options: CarouselOptions(
-              height: 250,
+              height: 200,
               viewportFraction: 0.93,
               enlargeCenterPage: true,
               autoPlay: schedules.length > 1,

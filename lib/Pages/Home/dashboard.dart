@@ -1,11 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:patient_app/Pages/Home/qr_code.dart';
 import 'package:patient_app/data/db_helper.dart';
 import 'package:patient_app/data/session.dart';
-import 'package:patient_app/models/doctor.dart';
 import 'package:patient_app/models/schedule.dart';
-import 'package:patient_app/utils/constants.dart';
-import 'package:patient_app/widgets/doctor_list.dart';
 import 'package:patient_app/widgets/schedule_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -26,11 +25,35 @@ class _DashboardState extends State<Dashboard> {
   String? _contact;
   String? _dateOfBirth;
   String? _email;
+  bool _isLoading = false;
+
   final Map<String, dynamic> user = {
     'name': '',
     'age': 29,
   };
 
+  void _onButtonPressed() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    Timer(Duration(seconds: 1, milliseconds: 500), () {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSuccessMessage();
+    });
+  }
+  
+  void _showSuccessMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sync completed successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+  
   List<Map<String, dynamic>> doctors = [];  // Change this to store raw doctor data
 
   Stream<List<Schedule>> _getSchedulesStream() async* {
@@ -219,7 +242,7 @@ class _DashboardState extends State<Dashboard> {
 
       try {
         // Query the records collection where patientEmail is equal to _email
-        QuerySnapshot recordsSnapshot = await FirebaseFirestore.instance
+        await FirebaseFirestore.instance
             .collection('records')
             .where('patientEmail', isEqualTo: _email)
             .get();
@@ -294,9 +317,22 @@ class _DashboardState extends State<Dashboard> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.notifications, color: Color.fromRGBO(33, 158, 80, 1)),
-                        onPressed: () {},
+                      child: SizedBox(
+                        width: 48, // Fixed width
+                        height: 48, // Fixed height
+                        child: IconButton(
+                          iconSize: 24, // Ensures icon size doesn't change
+                          padding: EdgeInsets.zero, // Removes extra padding
+                          icon: _isLoading
+                              ? const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color.fromRGBO(33, 158, 80, 1),
+                                  ),
+                                  strokeWidth: 2.0,
+                                )
+                              : const Icon(Icons.sync, color: Color.fromRGBO(33, 158, 80, 1)),
+                          onPressed: _isLoading ? null : _onButtonPressed,
+                        ),
                       ),
                     ),
                   ],
@@ -411,7 +447,7 @@ class _DashboardState extends State<Dashboard> {
                     itemBuilder: (context, index) {
                       final doctor = doctors[index];
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundImage: AssetImage('assets/images/avatar.png'),
                         ),
                         title: Text(
@@ -454,8 +490,38 @@ class _DashboardState extends State<Dashboard> {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              "Scan QR Code",
+                              "Get QR Code",
                               style: GoogleFonts.poppins(color: Color.fromRGBO(33, 158, 80, 1)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(227, 243, 208, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const FittedBox(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.note_add,
+                              color: Color.fromRGBO(33, 158, 80, 1),
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              "Add Notes",
+                              style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
                             ),
                           ],
                         ),
