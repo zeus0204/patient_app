@@ -17,7 +17,7 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>>? _medicalHistory = [];
   String? _fullName;
   String? _phoneNumber;
@@ -26,6 +26,25 @@ class _DashboardState extends State<Dashboard> {
   String? _dateOfBirth;
   String? _email;
   bool _isLoading = false;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _fetchDoctors();
+
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 1, milliseconds: 500), // 1.5 seconds duration
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose(); // Dispose the controller when not needed
+    super.dispose();
+  }
 
   final Map<String, dynamic> user = {
     'name': '',
@@ -36,12 +55,13 @@ class _DashboardState extends State<Dashboard> {
     setState(() {
       _isLoading = true;
     });
-
+    _animationController.repeat();
     Timer(Duration(seconds: 1, milliseconds: 500), () {
       setState(() {
         _isLoading = false;
       });
       _showSuccessMessage();
+      _animationController.stop();
     });
   }
   
@@ -145,12 +165,7 @@ class _DashboardState extends State<Dashboard> {
     return DateFormat('h:mm a').format(time);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-    _fetchDoctors();
-  }
+  
 
   Future<void> _fetchDoctors() async {
     try {
@@ -315,22 +330,21 @@ class _DashboardState extends State<Dashboard> {
                       margin: EdgeInsets.only(right: size.width * 0.05),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(50),
                       ),
                       child: SizedBox(
-                        width: 48, // Fixed width
-                        height: 48, // Fixed height
+                        width: 32, // Fixed width
+                        height: 32, // Fixed height
                         child: IconButton(
-                          iconSize: 24, // Ensures icon size doesn't change
+                          iconSize: 15, // Ensures icon size doesn't change
                           padding: EdgeInsets.zero, // Removes extra padding
-                          icon: _isLoading
-                              ? const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color.fromRGBO(33, 158, 80, 1),
-                                  ),
-                                  strokeWidth: 2.0,
-                                )
-                              : const Icon(Icons.sync, color: Color.fromRGBO(33, 158, 80, 1)),
+                          icon: RotationTransition(
+                            turns: _animationController,
+                            child: const Icon(
+                              Icons.sync,
+                              color: Color.fromRGBO(33, 158, 80, 1),
+                            ),
+                          ),
                           onPressed: _isLoading ? null : _onButtonPressed,
                         ),
                       ),
