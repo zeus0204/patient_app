@@ -108,7 +108,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     future: getDoctornameByEmail(item['doctorEmail']),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator(); // Show loading indicator while waiting
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                          ),
+                        ); // Show loading indicator while waiting
                       } else if (snapshot.hasError) {
                         return Text('Error: ${snapshot.error}');
                       } else {
@@ -152,7 +156,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                    ),
+                  )
           : _user == null
               ? const Center(child: Text("No user data found"))
               : Padding(

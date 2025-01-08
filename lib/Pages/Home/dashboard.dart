@@ -27,13 +27,15 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   String? _email;
   bool _isLoading = false;
   late AnimationController _animationController;
+  List<Map<String, dynamic>> recentDocotors = [];
+  bool _isFetchingRecords = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _fetchDoctors();
-
+    getLatestRecordsByPatientEmail(_email);
     _animationController = AnimationController(
       duration: const Duration(seconds: 1, milliseconds: 500), // 1.5 seconds duration
       vsync: this,
@@ -50,6 +52,65 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     'name': '',
     'age': 29,
   };
+
+  Future<void> getLatestRecordsByPatientEmail(String? patientEmail) async {
+
+    setState(() {
+      _isFetchingRecords = true; // Start fetching
+    });
+
+    try {
+      // Step 1: Query records matching the given patientEmail
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('records')
+          .where('patientEmail', isEqualTo: patientEmail)
+          .get();
+
+      print("Number of records fetched: ${snapshot.docs.length}");
+      if (snapshot.docs.isEmpty) {
+        print("No records found for patientEmail: $patientEmail");
+        return;
+      }
+
+      // Step 2: Process records to group by patientEmail and get the latest updatedAt
+      Map<String, Map<String, dynamic>> latestRecords = {};
+
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> record = doc.data() as Map<String, dynamic>;
+        String? doctorEmail = record['doctorEmail'] as String?;
+        Timestamp? updatedAt = record['time'] as Timestamp?;
+
+        // Skip records with null patientEmail or updatedAt
+        if (doctorEmail == null || updatedAt == null) {
+          print("Skipping record with missing data: $record");
+          continue;
+        }
+
+        // Check if this record is more recent than the stored one
+        if (!latestRecords.containsKey(doctorEmail) || 
+            updatedAt.toDate().isAfter(
+                (latestRecords[doctorEmail]!['time'] as Timestamp).toDate())) {
+          latestRecords[doctorEmail] = record;
+        }
+      }
+
+      // Debug latest records
+      List<Map<String, dynamic>> sortedRecentDocotors = latestRecords.values.toList();
+      sortedRecentDocotors.sort((a, b) {
+        Timestamp timeA = a['time'] as Timestamp;
+        Timestamp timeB = b['time'] as Timestamp;
+        return timeB.compareTo(timeA); // Latest time first
+      });
+
+      // Step 3: Update state with the filtered records
+      setState(() {
+        recentDocotors = sortedRecentDocotors;
+        _isFetchingRecords = false;
+      });
+    } catch (e) {
+      print('Error fetching records: $e');
+    }
+  }
 
   void _onButtonPressed() {
     setState(() {
@@ -72,6 +133,147 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         backgroundColor: Colors.green,
       ),
     );
+  }
+
+  Future<String> getDoctorName(String? userEmail) async {
+    List<Map<String, dynamic>> doctors = await DBHelper().getAllDoctors();
+    if (userEmail == null) return 'Unknown Patient';
+    final doctor = doctors.firstWhere(
+      (doc) => doc['email'] == userEmail,
+      orElse: () => {'fullName': 'Unknown Patient'},
+    );
+    return doctor['fullName'] ?? 'Unknown Patient';
+  }
+
+  Future<Map<String, dynamic>> getDoctorDetailsByEmail(String email) async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('doctors')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.data() as Map<String, dynamic>;
+      } else {
+        throw Exception('No patient found with email: $email');
+      }
+    } catch (e) {
+      throw Exception('Failed to load patient data: $e');
+    }
+  }
+
+  void _showDoctorInfo(BuildContext context, String email) async {
+    try {
+      Map<String, dynamic> doctorData = await getDoctorDetailsByEmail(email);
+
+      String formatDate(String dateStr) {
+        if (dateStr.isEmpty) return 'N/A';
+        try {
+          DateTime parsedDate = DateTime.parse(dateStr);
+          return DateFormat('yyyy-MM-dd').format(parsedDate);
+        } catch (e) {
+          return 'Invalid Date';
+        }
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            title: const Text(
+              "Doctor Information",
+              style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1), fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.person, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      doctorData['fullName'] ?? 'Unknown Name',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.email, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Email: ${doctorData['email']}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.phone, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Phone: ${doctorData['phoneNumber'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Address: ${doctorData['doctors_info']['address'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Demography: ${doctorData['doctors_info']['demography'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Practing Tenure: ${doctorData['doctors_info']['practingTenure'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Specialization: ${doctorData['doctors_info']['specialization'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.cake, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Birthday: ${formatDate(doctorData['doctors_info']['birthday'])}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.contact_phone, color: Color.fromRGBO(10, 62, 29, 1)),
+                    title: Text(
+                      "Contact: ${doctorData['doctors_info']['contact'] ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text(
+                  "Close",
+                  style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1), fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
   
   List<Map<String, dynamic>> doctors = [];  // Change this to store raw doctor data
@@ -395,7 +597,11 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       stream: _getSchedulesStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                    ),
+                  );
         }
         
         if (snapshot.hasError) {
@@ -443,7 +649,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Doctors",
+              "Recent Doctors",
               style: GoogleFonts.poppins(
                 fontSize: size.width * 0.045,
                 fontWeight: FontWeight.bold,
@@ -452,28 +658,62 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             ),
             SizedBox(height: size.height * 0.01),
             Expanded(
-              child: ClipRRect(
+              child: (_isFetchingRecords)
+                  ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                    ),
+                  ) : ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   color: Colors.white,
                   child: ListView.builder(
-                    itemCount: doctors.length,
+                    itemCount: recentDocotors.length,
                     itemBuilder: (context, index) {
-                      final doctor = doctors[index];
-                      return ListTile(
-                        leading: const CircleAvatar(
-                          backgroundImage: AssetImage('assets/images/avatar.png'),
-                        ),
-                        title: Text(
-                          doctor['fullName'] ?? 'Unknown Doctor',
-                          style: GoogleFonts.poppins(fontSize: size.width * 0.035),
-                        ),
-                        subtitle: Text(
-                          'Last Updated: 2h ago',
-                          style: GoogleFonts.poppins(fontSize: size.width * 0.03),
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                        onTap: () {},
+                      final doctor = recentDocotors[index];
+                      final email = doctor['doctorEmail'] ?? 'Unknown Email';
+                      final updatedAt = doctor['time'] != null 
+                        ? DateFormat('dd/MM/yyyy hh:mm a').format((doctor['time'] as Timestamp).toDate())
+                        : 'No Update Info';
+                      return FutureBuilder<String>(
+                        future: getDoctorName(email),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: AssetImage('assets/images/avatar.png'),
+                              ),
+                              title: Text('Loading...'),
+                              subtitle: Text('Please wait...'),
+                              trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            );
+                          } else if (snapshot.hasError) {
+                            return ListTile(
+                              leading: const CircleAvatar(
+                                backgroundImage: AssetImage('assets/images/avatar.png'),
+                              ),
+                              title: const Text('Error loading name'),
+                              subtitle: Text(updatedAt),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            );
+                          } else {
+                            return ListTile(
+                              leading: const CircleAvatar(
+                                backgroundImage: AssetImage('assets/images/avatar.png'),
+                              ),
+                              title: Text(
+                                snapshot.data ?? 'Unknown Patient',
+                                style: GoogleFonts.poppins(fontSize: size.width * 0.035),
+                              ),
+                              subtitle: Text(
+                                updatedAt,
+                                style: GoogleFonts.poppins(fontSize: size.width * 0.03),
+                              ),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                              onTap: () => _showDoctorInfo(context, email),
+                            );
+                          }
+                        },
                       );
                     },
                   ),

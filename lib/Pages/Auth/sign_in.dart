@@ -35,7 +35,7 @@ class _SigninState extends State<Signin> {
       _signInformkey.currentState!.save();
 
       try {
-        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _email!,
           password: _password!,
         );

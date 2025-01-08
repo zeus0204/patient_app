@@ -206,7 +206,11 @@ class _CalendarState extends State<Calendar> {
                 stream: _getAppointmentsStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                      ),
+                    );
                   }
 
                   if (snapshot.hasError) {

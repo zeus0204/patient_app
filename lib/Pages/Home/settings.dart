@@ -70,7 +70,11 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading  
-          ? const Center(child: CircularProgressIndicator())  
+          ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                    ),
+                  )  
           : Padding(
         padding: const EdgeInsets.only(top: 50.0, right: 30, left: 30),
         child: Column(
