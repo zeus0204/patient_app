@@ -51,6 +51,7 @@ dependencies:
   firebase_auth: ^5.3.4
   firebase_storage: ^12.3.7
   flutter_carousel_widget: ^2.1.2
+  connectivity_plus: ^6.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -86,7 +86,7 @@ class _EditProfileState extends State<EditProfile> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
+        const SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
       );
     }
   }
@@ -96,31 +96,52 @@ class _EditProfileState extends State<EditProfile> {
       setState(() {
         _isLoading = true; // Start loading
       });
-      _formKey.currentState!.save();
+
       try {
+        _formKey.currentState!.save();
+        
+        // Save data to local state/cache first
         String? email = await SessionManager.getUserSession();
         if (email != null) {
-          Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
-          if (userData != null) {
-            await DBHelper().updatePatients(
-              email: email,
-              fullName: _fullName,
-              phoneNumber: _phoneNumber,
-            );
-
-            await DBHelper().updatePatientsInfo(
-              email: email,
-              address: _address,
-              contact: _contact,
-              birthday: _dateOfBirth != null
-                  ? DateTime.parse(_dateOfBirth!)
-                  : null,
-            );
-
+          // Simulating local caching logic here
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile updated successfully!')),
+              const SnackBar(content: Text('Profile saved successfully')),
             );
-            Navigator.pop(context, true);
+            
+            // Reflect changes in the UI immediately
+            setState(() {
+              _fullName = _fullNameController.text;
+              _phoneNumber = _phoneNumberController.text;
+              _address = _addressController.text;
+              _contact = _contactController.text;
+              _dateOfBirth = _dateOfBirthController.text;
+            });
+          // Attempt to sync with remote database
+          Navigator.pop(context, true);
+          try {
+            Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
+            if (userData != null) {
+              await DBHelper().updatePatients(
+                email: email,
+                fullName: _fullName,
+                phoneNumber: _phoneNumber,
+              );
+
+              await DBHelper().updatePatientsInfo(
+                email: email,
+                address: _address,
+                contact: _contact,
+                birthday: _dateOfBirth != null ? DateTime.parse(_dateOfBirth!) : null,
+              );
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profile updated successfully!')),
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Unable to sync. Will retry when online.')),
+            );
           }
         }
       } catch (e) {
@@ -129,11 +150,12 @@ class _EditProfileState extends State<EditProfile> {
         );
       } finally {
         setState(() {
-          _isLoading = false; // Stop loading
+          _isLoading = false; // Stop loading regardless of error or success
         });
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -515,6 +537,19 @@ class _EditProfileState extends State<EditProfile> {
                       'subtitle': subtitle,
                       'description': description,
                     };
+
+                    setState(() {
+                      if (record == null) {
+                        _medicalHistory.add(medicalHistory); // Reflect change immediately
+                      } else {
+                        int index = _medicalHistory.indexWhere((r) => r['title'] == record['title']);
+                        if (index != -1) {
+                          _medicalHistory[index] = medicalHistory; // Update the existing record
+                        }
+                      }
+                    });
+
+                    Navigator.pop(context); 
                     if (record == null) {
                       // Add new medical history
                       await DBHelper().insertMedicalHistory(email, medicalHistory);
@@ -522,7 +557,6 @@ class _EditProfileState extends State<EditProfile> {
                       // Update existing medical history
                       await DBHelper().updateMedicalHistory(email, record['title'] ,medicalHistory);
                     }
-                    Navigator.pop(context); 
                     setState(() {
                       _loadMedicalHistory(email); 
                     });

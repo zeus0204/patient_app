@@ -35,7 +35,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     super.initState();
     _loadUserData();
     _fetchDoctors();
-    getLatestRecordsByPatientEmail(_email);
+    getLatestRecordsByPatientEmail();
     _animationController = AnimationController(
       duration: const Duration(seconds: 1, milliseconds: 500), // 1.5 seconds duration
       vsync: this,
@@ -53,7 +53,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     'age': 29,
   };
 
-  Future<void> getLatestRecordsByPatientEmail(String? patientEmail) async {
+  Future<void> getLatestRecordsByPatientEmail() async {
+    String? patientEmail = await SessionManager.getUserSession();
 
     setState(() {
       _isFetchingRecords = true; // Start fetching
@@ -69,8 +70,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       print("Number of records fetched: ${snapshot.docs.length}");
       if (snapshot.docs.isEmpty) {
         print("No records found for patientEmail: $patientEmail");
-        return;
-      }
+      } 
 
       // Step 2: Process records to group by patientEmail and get the latest updatedAt
       Map<String, Map<String, dynamic>> latestRecords = {};
@@ -105,12 +105,16 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       // Step 3: Update state with the filtered records
       setState(() {
         recentDocotors = sortedRecentDocotors;
-        _isFetchingRecords = false;
       });
     } catch (e) {
       print('Error fetching records: $e');
+    } finally {
+      setState(() {
+        _isFetchingRecords = false; // Stop fetching
+      });
     }
   }
+
 
   void _onButtonPressed() {
     setState(() {
@@ -616,10 +620,10 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'No upcoming appointments',
+                'There is no appointment yet',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: Colors.grey,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -660,65 +664,81 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             Expanded(
               child: (_isFetchingRecords)
                   ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        color: Colors.white,
+                        child: (recentDocotors.isEmpty)
+                            ? Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(size.width * 0.08),
+                                  child: Text(
+                                    'There are no recent consultations',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    maxLines: 1, // Ensure the text stays in a single line
+                                    overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: recentDocotors.length,
+                                itemBuilder: (context, index) {
+                                  final doctor = recentDocotors[index];
+                                  final email = doctor['doctorEmail'] ?? 'Unknown Email';
+                                  final updatedAt = doctor['time'] != null 
+                                    ? DateFormat('dd/MM/yyyy hh:mm a').format((doctor['time'] as Timestamp).toDate())
+                                    : 'No Update Info';
+                                  return FutureBuilder<String>(
+                                    future: getDoctorName(email),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        return const ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundImage: AssetImage('assets/images/avatar.png'),
+                                          ),
+                                          title: Text('Loading...'),
+                                          subtitle: Text('Please wait...'),
+                                          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                        );
+                                      } else if (snapshot.hasError) {
+                                        return ListTile(
+                                          leading: const CircleAvatar(
+                                            backgroundImage: AssetImage('assets/images/avatar.png'),
+                                          ),
+                                          title: const Text('Error loading name'),
+                                          subtitle: Text(updatedAt),
+                                          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                        );
+                                      } else {
+                                        return ListTile(
+                                          leading: const CircleAvatar(
+                                            backgroundImage: AssetImage('assets/images/avatar.png'),
+                                          ),
+                                          title: Text(
+                                            snapshot.data ?? 'Unknown Patient',
+                                            style: GoogleFonts.poppins(fontSize: size.width * 0.035),
+                                          ),
+                                          subtitle: Text(
+                                            updatedAt,
+                                            style: GoogleFonts.poppins(fontSize: size.width * 0.03),
+                                          ),
+                                          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                          onTap: () => _showDoctorInfo(context, email),
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
                     ),
-                  ) : ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  color: Colors.white,
-                  child: ListView.builder(
-                    itemCount: recentDocotors.length,
-                    itemBuilder: (context, index) {
-                      final doctor = recentDocotors[index];
-                      final email = doctor['doctorEmail'] ?? 'Unknown Email';
-                      final updatedAt = doctor['time'] != null 
-                        ? DateFormat('dd/MM/yyyy hh:mm a').format((doctor['time'] as Timestamp).toDate())
-                        : 'No Update Info';
-                      return FutureBuilder<String>(
-                        future: getDoctorName(email),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: AssetImage('assets/images/avatar.png'),
-                              ),
-                              title: Text('Loading...'),
-                              subtitle: Text('Please wait...'),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                            );
-                          } else if (snapshot.hasError) {
-                            return ListTile(
-                              leading: const CircleAvatar(
-                                backgroundImage: AssetImage('assets/images/avatar.png'),
-                              ),
-                              title: const Text('Error loading name'),
-                              subtitle: Text(updatedAt),
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                            );
-                          } else {
-                            return ListTile(
-                              leading: const CircleAvatar(
-                                backgroundImage: AssetImage('assets/images/avatar.png'),
-                              ),
-                              title: Text(
-                                snapshot.data ?? 'Unknown Patient',
-                                style: GoogleFonts.poppins(fontSize: size.width * 0.035),
-                              ),
-                              subtitle: Text(
-                                updatedAt,
-                                style: GoogleFonts.poppins(fontSize: size.width * 0.03),
-                              ),
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                              onTap: () => _showDoctorInfo(context, email),
-                            );
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
             ),
             SizedBox(height: size.height * 0.03),
             Row(
@@ -784,7 +804,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

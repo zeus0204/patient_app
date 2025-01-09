@@ -504,6 +504,14 @@ class _AddAppointmentState extends State<AddAppointment> {
         'time': _selectedTime,
         'updatedAt': FieldValue.serverTimestamp(),
       };
+      Navigator.pop(context); // Close loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.id == null ? 'Appointment scheduled successfully' : 'Appointment updated successfully'),
+          backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
+        ),
+      );
 
       if (widget.id == null) {
         // Add new appointment
@@ -519,7 +527,6 @@ class _AddAppointmentState extends State<AddAppointment> {
       }
       
       // Close loading dialog
-      Navigator.pop(context);
       
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(
