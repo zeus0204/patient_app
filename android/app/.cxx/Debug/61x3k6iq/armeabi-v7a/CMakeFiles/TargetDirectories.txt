@@ -1,0 +1,2 @@
+C:/Users/Admin/Videos/healthcare/patient_app/android/app/.cxx/Debug/61x3k6iq/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Videos/healthcare/patient_app/android/app/.cxx/Debug/61x3k6iq/armeabi-v7a/CMakeFiles/rebuild_cache.dir
