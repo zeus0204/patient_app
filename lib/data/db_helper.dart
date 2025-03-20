@@ -6,7 +6,11 @@ class DBHelper {
   // Insert Patients data
   Future<void> insertPatients(Map<String, dynamic> patientsData) async {
     try {
-      var result = await _firestore.collection('patients').where('email', isEqualTo: patientsData['email']).get();
+      var result =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: patientsData['email'])
+              .get();
       if (result.docs.isNotEmpty) {
         throw Exception('Email already exists. Please use a different email');
       }
@@ -38,7 +42,8 @@ class DBHelper {
   // Check if email exists
   Future<bool> emailExists(String email) async {
     try {
-      final docSnapshot = await _firestore.collection('patients').doc(email).get();
+      final docSnapshot =
+          await _firestore.collection('patients').doc(email).get();
       return docSnapshot.exists;
     } catch (e) {
       throw Exception('Error checking email existence: $e');
@@ -47,10 +52,11 @@ class DBHelper {
 
   // Get patients by email
   Future<Map<String, dynamic>?> getPatientsByEmail(String email) async {
-    final querySnapshot = await _firestore
-    .collection('patients')
-    .where('email', isEqualTo: email)
-    .get();
+    final querySnapshot =
+        await _firestore
+            .collection('patients')
+            .where('email', isEqualTo: email)
+            .get();
 
     if (querySnapshot.docs.isNotEmpty) {
       return querySnapshot.docs.first.data();
@@ -60,10 +66,11 @@ class DBHelper {
   }
 
   Future<Map<String, dynamic>?> getDoctorByEmail(String? email) async {
-    final querySnapshot = await _firestore
-    .collection('doctors')
-    .where('email', isEqualTo: email)
-    .get();
+    final querySnapshot =
+        await _firestore
+            .collection('doctors')
+            .where('email', isEqualTo: email)
+            .get();
 
     if (querySnapshot.docs.isNotEmpty) {
       return querySnapshot.docs.first.data();
@@ -78,11 +85,12 @@ class DBHelper {
     String? fullName,
     String? phoneNumber,
   }) async {
-      try {
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
+    try {
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         for (var doc in querySnapshot.docs) {
@@ -107,10 +115,11 @@ class DBHelper {
     DateTime? birthday,
   }) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         for (var doc in querySnapshot.docs) {
@@ -119,7 +128,7 @@ class DBHelper {
               if (address != null) 'address': address,
               if (contact != null) 'contact': contact,
               if (birthday != null) 'birthday': birthday.toIso8601String(),
-            }
+            },
           }, SetOptions(merge: true));
         }
       } else {
@@ -131,18 +140,22 @@ class DBHelper {
   }
 
   // Insert medical history
-  Future<void> insertMedicalHistory(String email, Map<String, dynamic> medicalHistory) async {
+  Future<void> insertMedicalHistory(
+    String email,
+    Map<String, dynamic> medicalHistory,
+  ) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         for (var doc in querySnapshot.docs) {
           // Use arrayUnion to add the new medicalHistory to the existing list
           await doc.reference.update({
-            'medical_history': FieldValue.arrayUnion([medicalHistory])
+            'medical_history': FieldValue.arrayUnion([medicalHistory]),
           });
         }
       } else {
@@ -153,19 +166,26 @@ class DBHelper {
     }
   }
 
-  Future<void> updateMedicalHistory(String email, String recordTitle, Map<String, dynamic> updatedData) async {
+  Future<void> updateMedicalHistory(
+    String email,
+    String recordTitle,
+    Map<String, dynamic> updatedData,
+  ) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
         List<dynamic> medicalHistory = doc['medical_history'] ?? [];
 
         // Find index of the record with the matching title
-        int recordIndex = medicalHistory.indexWhere((record) => record['title'] == recordTitle);
+        int recordIndex = medicalHistory.indexWhere(
+          (record) => record['title'] == recordTitle,
+        );
 
         if (recordIndex != -1) {
           // Update the specific record's data
@@ -174,7 +194,9 @@ class DBHelper {
           // Update the document with the modified medical history array
           await doc.reference.update({'medical_history': medicalHistory});
         } else {
-          throw Exception('No medical history record found with title $recordTitle');
+          throw Exception(
+            'No medical history record found with title $recordTitle',
+          );
         }
       } else {
         throw Exception('No patient found with email $email');
@@ -184,23 +206,29 @@ class DBHelper {
     }
   }
 
-
   Future<void> deleteMedicalHistory(String email, String recordId) async {
     try {
-      await _firestore.collection('patients').doc(email)
-          .collection('medical_history').doc(recordId).delete();
+      await _firestore
+          .collection('patients')
+          .doc(email)
+          .collection('medical_history')
+          .doc(recordId)
+          .delete();
     } catch (e) {
       throw Exception('Failed to delete medical history: $e');
     }
   }
 
   // Fetch medical history
-  Future<List<Map<String, dynamic>>> getMedicalHistoryByEmail(String email) async {
+  Future<List<Map<String, dynamic>>> getMedicalHistoryByEmail(
+    String email,
+  ) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         // Assuming there's only one document per unique email
@@ -208,7 +236,9 @@ class DBHelper {
         final medicalHistory = doc['medical_history'] ?? [];
 
         if (medicalHistory is List) {
-          return medicalHistory.map((item) => Map<String, dynamic>.from(item)).toList();
+          return medicalHistory
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
         }
       }
 
@@ -218,15 +248,15 @@ class DBHelper {
     }
   }
 
-
   Future<Map<String, dynamic>?> getPatientsInfoByEmail(String email) async {
     try {
       // Query the 'patients' collection for a document where the 'email' field matches the given email
-      final querySnapshot = await _firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .get();
-      
+      final querySnapshot =
+          await _firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .get();
+
       // Check if any documents were found
       if (querySnapshot.docs.isNotEmpty) {
         // Assuming each email is unique, take the first match
@@ -248,11 +278,12 @@ class DBHelper {
       final firestore = FirebaseFirestore.instance;
 
       // Query the 'users' collection where the 'email' field matches the given email
-      final querySnapshot = await firestore
-          .collection('patients')
-          .where('email', isEqualTo: email)
-          .limit(1) // Limit to 1 result since emails are unique
-          .get();
+      final querySnapshot =
+          await firestore
+              .collection('patients')
+              .where('email', isEqualTo: email)
+              .limit(1) // Limit to 1 result since emails are unique
+              .get();
 
       // Check if any documents were returned
       if (querySnapshot.docs.isNotEmpty) {
@@ -269,10 +300,11 @@ class DBHelper {
 
   Future<List<Object?>> getAppointmentsByPatientEmail(String userEmail) async {
     try {
-      QuerySnapshot querySnapshot = await _firestore
-          .collection('appointments')
-          .where('userEmail', isEqualTo: userEmail)
-          .get();
+      QuerySnapshot querySnapshot =
+          await _firestore
+              .collection('appointments')
+              .where('userEmail', isEqualTo: userEmail)
+              .get();
 
       return querySnapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
@@ -294,13 +326,16 @@ class DBHelper {
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
       // Query Firestore collection to find appointments matching the given ID
-      QuerySnapshot querySnapshot = await firestore
-          .collection('appointments')
-          .where(FieldPath.documentId, isEqualTo: id)
-          .get();
+      QuerySnapshot querySnapshot =
+          await firestore
+              .collection('appointments')
+              .where(FieldPath.documentId, isEqualTo: id)
+              .get();
 
       // Convert the query snapshot into a list of maps
-      return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      return querySnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     } catch (e) {
       throw Exception('Error fetching appointment by ID: $e');
     }
@@ -314,7 +349,10 @@ class DBHelper {
     }
   }
 
-  Future<void> updateAppointment(String id, Map<String, dynamic> updatedData) async {
+  Future<void> updateAppointment(
+    String id,
+    Map<String, dynamic> updatedData,
+  ) async {
     try {
       await _firestore.collection('appointments').doc(id).update(updatedData);
     } catch (e) {
@@ -322,26 +360,29 @@ class DBHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchHospitalsForDoctor(String doctorEmail) async {  
-    try {  
-      final QuerySnapshot doctorSnapshot = await FirebaseFirestore.instance  
-          .collection('doctors')  
-          .where('email', isEqualTo: doctorEmail)  
-          .get();  
+  Future<List<Map<String, dynamic>>> fetchHospitalsForDoctor(
+    String doctorEmail,
+  ) async {
+    try {
+      final QuerySnapshot doctorSnapshot =
+          await FirebaseFirestore.instance
+              .collection('doctors')
+              .where('email', isEqualTo: doctorEmail)
+              .get();
 
-      if (doctorSnapshot.docs.isNotEmpty) {  
-        DocumentSnapshot doctorDoc = doctorSnapshot.docs.first;  
+      if (doctorSnapshot.docs.isNotEmpty) {
+        DocumentSnapshot doctorDoc = doctorSnapshot.docs.first;
 
-        // Assuming hospitals are stored directly as maps in the 'hospitals' field  
-        List<dynamic> hospitals = doctorDoc['hospitals'] ?? [];  
-        return hospitals.map((hosp) => hosp as Map<String, dynamic>).toList();  
-      } else {  
-        return [];  
-      }  
-    } catch (e) {  
-      print('Error fetching hospitals: $e');  
-      return [];  
-    }  
+        // Assuming hospitals are stored directly as maps in the 'hospitals' field
+        List<dynamic> hospitals = doctorDoc['hospitals'] ?? [];
+        return hospitals.map((hosp) => hosp as Map<String, dynamic>).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching hospitals: $e');
+      return [];
+    }
   }
 
   Future<String> generateQRData(

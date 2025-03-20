@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:patient_app/Pages/Home/Profile/profile.dart';
 import 'package:patient_app/Pages/Home/qr_code.dart';
 import 'package:patient_app/data/db_helper.dart';
 import 'package:patient_app/data/session.dart';
@@ -17,7 +18,8 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
+class _DashboardState extends State<Dashboard>
+    with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>>? _medicalHistory = [];
   String? _fullName;
   String? _phoneNumber;
@@ -37,7 +39,10 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     _fetchDoctors();
     getLatestRecordsByPatientEmail();
     _animationController = AnimationController(
-      duration: const Duration(seconds: 1, milliseconds: 500), // 1.5 seconds duration
+      duration: const Duration(
+        seconds: 1,
+        milliseconds: 500,
+      ), // 1.5 seconds duration
       vsync: this,
     );
   }
@@ -48,10 +53,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  final Map<String, dynamic> user = {
-    'name': '',
-    'age': 29,
-  };
+  final Map<String, dynamic> user = {'name': '', 'age': 29};
 
   Future<void> getLatestRecordsByPatientEmail() async {
     String? patientEmail = await SessionManager.getUserSession();
@@ -62,15 +64,16 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
 
     try {
       // Step 1: Query records matching the given patientEmail
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('records')
-          .where('patientEmail', isEqualTo: patientEmail)
-          .get();
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance
+              .collection('records')
+              .where('patientEmail', isEqualTo: patientEmail)
+              .get();
 
       print("Number of records fetched: ${snapshot.docs.length}");
       if (snapshot.docs.isEmpty) {
         print("No records found for patientEmail: $patientEmail");
-      } 
+      }
 
       // Step 2: Process records to group by patientEmail and get the latest updatedAt
       Map<String, Map<String, dynamic>> latestRecords = {};
@@ -87,15 +90,17 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         }
 
         // Check if this record is more recent than the stored one
-        if (!latestRecords.containsKey(doctorEmail) || 
+        if (!latestRecords.containsKey(doctorEmail) ||
             updatedAt.toDate().isAfter(
-                (latestRecords[doctorEmail]!['time'] as Timestamp).toDate())) {
+              (latestRecords[doctorEmail]!['time'] as Timestamp).toDate(),
+            )) {
           latestRecords[doctorEmail] = record;
         }
       }
 
       // Debug latest records
-      List<Map<String, dynamic>> sortedRecentDocotors = latestRecords.values.toList();
+      List<Map<String, dynamic>> sortedRecentDocotors =
+          latestRecords.values.toList();
       sortedRecentDocotors.sort((a, b) {
         Timestamp timeA = a['time'] as Timestamp;
         Timestamp timeB = b['time'] as Timestamp;
@@ -115,7 +120,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     }
   }
 
-
   void _onButtonPressed() {
     setState(() {
       _isLoading = true;
@@ -129,7 +133,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       _animationController.stop();
     });
   }
-  
+
   void _showSuccessMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -151,10 +155,11 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
 
   Future<Map<String, dynamic>> getDoctorDetailsByEmail(String email) async {
     try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('doctors')
-          .where('email', isEqualTo: email)
-          .get();
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance
+              .collection('doctors')
+              .where('email', isEqualTo: email)
+              .get();
 
       if (snapshot.docs.isNotEmpty) {
         return snapshot.docs.first.data() as Map<String, dynamic>;
@@ -184,11 +189,17 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         context: context,
         builder: (BuildContext dialogContext) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             backgroundColor: Colors.white,
             title: const Text(
               "Doctor Information",
-              style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1), fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Color.fromRGBO(33, 158, 80, 1),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -196,63 +207,92 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.person, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.person,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       doctorData['fullName'] ?? 'Unknown Name',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(color: Colors.black),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.email, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.email,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Email: ${doctorData['email']}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.phone, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.phone,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Phone: ${doctorData['phoneNumber'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.home,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Address: ${doctorData['doctors_info']['address'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.home,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Demography: ${doctorData['doctors_info']['demography'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.home,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Practing Tenure: ${doctorData['doctors_info']['practingTenure'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.home, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.home,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Specialization: ${doctorData['doctors_info']['specialization'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.cake, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.cake,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Birthday: ${formatDate(doctorData['doctors_info']['birthday'])}",
                       style: const TextStyle(color: Colors.black87),
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.contact_phone, color: Color.fromRGBO(10, 62, 29, 1)),
+                    leading: const Icon(
+                      Icons.contact_phone,
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
                     title: Text(
                       "Contact: ${doctorData['doctors_info']['contact'] ?? 'N/A'}",
                       style: const TextStyle(color: Colors.black87),
@@ -266,7 +306,10 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                 onPressed: () => Navigator.pop(dialogContext),
                 child: const Text(
                   "Close",
-                  style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1), fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Color.fromRGBO(33, 158, 80, 1),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -274,13 +317,14 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
-  
-  List<Map<String, dynamic>> doctors = [];  // Change this to store raw doctor data
+
+  List<Map<String, dynamic>> doctors =
+      []; // Change this to store raw doctor data
 
   Stream<List<Schedule>> _getSchedulesStream() async* {
     try {
@@ -294,68 +338,80 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
           .where('userEmail', isEqualTo: userEmail)
           .snapshots()
           .map((snapshot) {
-        final schedules = snapshot.docs.map((doc) {
-          final data = doc.data();
-          final String appointmentId = doc.id;  // Get the appointment ID
-          
-          final String doctorName = data['doctorEmail'] != null 
-              ? doctors.firstWhere(
-                  (doc) => doc['email'] == data['doctorEmail'],
-                  orElse: () => {'fullName': 'Unknown Doctor'},
-                )['fullName'] ?? 'Unknown Doctor'
-              : data['doctorName'] ?? 'Unknown Doctor';
+            final schedules =
+                snapshot.docs
+                    .map((doc) {
+                      final data = doc.data();
+                      final String appointmentId =
+                          doc.id; // Get the appointment ID
 
-          final DateTime? appointmentDate = data['day'] != null 
-              ? DateTime.parse(data['day'].toString())
-              : null;
+                      final String doctorName =
+                          data['doctorEmail'] != null
+                              ? doctors.firstWhere(
+                                    (doc) =>
+                                        doc['email'] == data['doctorEmail'],
+                                    orElse:
+                                        () => {'fullName': 'Unknown Doctor'},
+                                  )['fullName'] ??
+                                  'Unknown Doctor'
+                              : data['doctorName'] ?? 'Unknown Doctor';
 
-          DateTime? startTime;
-          if (appointmentDate != null && data['time'] != null) {
-            final timeStr = data['time'].toString();
-            final timeParts = timeStr.toUpperCase().split(' ');
-            if (timeParts.length == 2) {
-              final time = timeParts[0].split(':');
-              int hour = int.parse(time[0]);
-              int minute = int.parse(time[1]);
-              
-              if (timeParts[1] == 'PM' && hour < 12) {
-                hour += 12;
-              } else if (timeParts[1] == 'AM' && hour == 12) {
-                hour = 0;
-              }
-              
-              startTime = DateTime(
-                appointmentDate.year,
-                appointmentDate.month,
-                appointmentDate.day,
-                hour,
-                minute,
-              );
-            }
-          }
+                      final DateTime? appointmentDate =
+                          data['day'] != null
+                              ? DateTime.parse(data['day'].toString())
+                              : null;
 
-          final DateTime? endTime = startTime?.add(const Duration(hours: 1));
-          
-          if (appointmentDate == null || startTime == null || endTime == null) {
-            return null;
-          }
+                      DateTime? startTime;
+                      if (appointmentDate != null && data['time'] != null) {
+                        final timeStr = data['time'].toString();
+                        final timeParts = timeStr.toUpperCase().split(' ');
+                        if (timeParts.length == 2) {
+                          final time = timeParts[0].split(':');
+                          int hour = int.parse(time[0]);
+                          int minute = int.parse(time[1]);
 
-          return Schedule(
-            doctor: doctorName,
-            address: data['hospitalName'] ?? 'Consultation',
-            dayTime: _formatDate(appointmentDate),
-            startTime: _formatTime(startTime),
-            endTime: _formatTime(endTime),
-            avatar: 'assets/images/avatar.png',
-            id: appointmentId,  // Add the ID to the Schedule
-          );
-        })
-        .where((schedule) => schedule != null)
-        .cast<Schedule>()
-        .toList();
-        
-        return schedules;
-      });
+                          if (timeParts[1] == 'PM' && hour < 12) {
+                            hour += 12;
+                          } else if (timeParts[1] == 'AM' && hour == 12) {
+                            hour = 0;
+                          }
+
+                          startTime = DateTime(
+                            appointmentDate.year,
+                            appointmentDate.month,
+                            appointmentDate.day,
+                            hour,
+                            minute,
+                          );
+                        }
+                      }
+
+                      final DateTime? endTime = startTime?.add(
+                        const Duration(minutes: 30),
+                      );
+
+                      if (appointmentDate == null ||
+                          startTime == null ||
+                          endTime == null) {
+                        return null;
+                      }
+
+                      return Schedule(
+                        doctor: doctorName,
+                        address: data['hospitalName'] ?? 'Consultation',
+                        dayTime: _formatDate(appointmentDate),
+                        startTime: _formatTime(startTime),
+                        endTime: _formatTime(endTime),
+                        avatar: 'assets/images/avatar.png',
+                        id: appointmentId, // Add the ID to the Schedule
+                      );
+                    })
+                    .where((schedule) => schedule != null)
+                    .cast<Schedule>()
+                    .toList();
+
+            return schedules;
+          });
     } catch (e) {
       yield [];
     }
@@ -370,8 +426,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     if (time == null) return '';
     return DateFormat('h:mm a').format(time);
   }
-
-  
 
   Future<void> _fetchDoctors() async {
     try {
@@ -408,9 +462,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading user data: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading user data: $e')));
       }
     }
   }
@@ -426,7 +480,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
+          const SnackBar(
+            content: Text('Your profile lacks medical history. Please add it.'),
+          ),
         );
       }
     }
@@ -447,6 +503,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         {'address': _address},
         {'contact': _contact},
         {'birthday': _dateOfBirth},
+        {'currentTime': DateTime.now().toString()},
       ];
 
       // Add medical history entries
@@ -478,15 +535,16 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         );
       } catch (e) {
         // Handle potential errors
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error fetching records: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error fetching records: $e")));
       }
     } else {
       // Handle case where user data is not available
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("User data not available. Please make your profile!")),
+          content: Text("User data not available. Please update your profile!"),
+        ),
       );
     }
   }
@@ -582,9 +640,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: size.height * 0.01),
-                    Expanded(
-                      child: _buildRecentRecords(size),
-                    ),
+                    Expanded(child: _buildRecentRecords(size)),
                     SizedBox(height: size.height * 0.02),
                   ],
                 ),
@@ -602,18 +658,18 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
-                    ),
-                  );
-        }
-        
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.white,
+              ), // Set loading indicator color to white
+            ),
           );
         }
-        
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
         final schedules = snapshot.data ?? [];
         if (schedules.isEmpty) {
           return Center(
@@ -621,15 +677,12 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'There is no appointment yet',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
+                style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
               ),
             ),
           );
         }
-        
+
         return ScheduleCard(
           schedules: schedules,
           size: size,
@@ -642,7 +695,10 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
 
   Widget _buildRecentRecords(Size size) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: size.width * 0.1, vertical: size.height * 0.02),
+      padding: EdgeInsets.symmetric(
+        horizontal: size.width * 0.1,
+        vertical: size.height * 0.02,
+      ),
       child: Container(
         padding: EdgeInsets.all(size.width * 0.04),
         decoration: BoxDecoration(
@@ -662,90 +718,139 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             ),
             SizedBox(height: size.height * 0.01),
             Expanded(
-              child: (_isFetchingRecords)
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Set loading indicator color to white
-                      ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        color: Colors.white,
-                        child: (recentDocotors.isEmpty)
-                            ? Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(size.width * 0.08),
-                                  child: Text(
-                                    'There are no recent consultations',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      color: Colors.grey,
+              child:
+                  (_isFetchingRecords)
+                      ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ), // Set loading indicator color to white
+                        ),
+                      )
+                      : ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          color: Colors.white,
+                          child:
+                              (recentDocotors.isEmpty)
+                                  ? Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(
+                                        size.width * 0.08,
+                                      ),
+                                      child: Text(
+                                        'There are no recent consultations',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
+                                        maxLines:
+                                            1, // Ensure the text stays in a single line
+                                        overflow:
+                                            TextOverflow
+                                                .ellipsis, // Handle overflow with ellipsis
+                                      ),
                                     ),
-                                    maxLines: 1, // Ensure the text stays in a single line
-                                    overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: recentDocotors.length,
-                                itemBuilder: (context, index) {
-                                  final doctor = recentDocotors[index];
-                                  final email = doctor['doctorEmail'] ?? 'Unknown Email';
-                                  final updatedAt = doctor['time'] != null 
-                                    ? DateFormat('dd/MM/yyyy hh:mm a').format((doctor['time'] as Timestamp).toDate())
-                                    : 'No Update Info';
-                                  return FutureBuilder<String>(
-                                    future: getDoctorName(email),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.waiting) {
-                                        return const ListTile(
-                                          leading: CircleAvatar(
-                                            backgroundImage: AssetImage('assets/images/avatar.png'),
-                                          ),
-                                          title: Text('Loading...'),
-                                          subtitle: Text('Please wait...'),
-                                          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                                        );
-                                      } else if (snapshot.hasError) {
-                                        return ListTile(
-                                          leading: const CircleAvatar(
-                                            backgroundImage: AssetImage('assets/images/avatar.png'),
-                                          ),
-                                          title: const Text('Error loading name'),
-                                          subtitle: Text(updatedAt),
-                                          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                                        );
-                                      } else {
-                                        return ListTile(
-                                          leading: const CircleAvatar(
-                                            backgroundImage: AssetImage('assets/images/avatar.png'),
-                                          ),
-                                          title: Text(
-                                            snapshot.data ?? 'Unknown Patient',
-                                            style: GoogleFonts.poppins(fontSize: size.width * 0.035),
-                                          ),
-                                          subtitle: Text(
-                                            updatedAt,
-                                            style: GoogleFonts.poppins(fontSize: size.width * 0.03),
-                                          ),
-                                          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                                          onTap: () => _showDoctorInfo(context, email),
-                                        );
-                                      }
+                                  )
+                                  : ListView.builder(
+                                    itemCount: recentDocotors.length,
+                                    itemBuilder: (context, index) {
+                                      final doctor = recentDocotors[index];
+                                      final email =
+                                          doctor['doctorEmail'] ??
+                                          'Unknown Email';
+                                      final updatedAt =
+                                          doctor['time'] != null
+                                              ? DateFormat(
+                                                'dd/MM/yyyy hh:mm a',
+                                              ).format(
+                                                (doctor['time'] as Timestamp)
+                                                    .toDate(),
+                                              )
+                                              : 'No Update Info';
+                                      return FutureBuilder<String>(
+                                        future: getDoctorName(email),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const ListTile(
+                                              leading: CircleAvatar(
+                                                backgroundImage: AssetImage(
+                                                  'assets/images/avatar.png',
+                                                ),
+                                              ),
+                                              title: Text('Loading...'),
+                                              subtitle: Text('Please wait...'),
+                                              trailing: Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return ListTile(
+                                              leading: const CircleAvatar(
+                                                backgroundImage: AssetImage(
+                                                  'assets/images/avatar.png',
+                                                ),
+                                              ),
+                                              title: const Text(
+                                                'Error loading name',
+                                              ),
+                                              subtitle: Text(updatedAt),
+                                              trailing: const Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          } else {
+                                            return ListTile(
+                                              leading: const CircleAvatar(
+                                                backgroundImage: AssetImage(
+                                                  'assets/images/avatar.png',
+                                                ),
+                                              ),
+                                              title: Text(
+                                                snapshot.data ??
+                                                    'Unknown Patient',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: size.width * 0.035,
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                updatedAt,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: size.width * 0.03,
+                                                ),
+                                              ),
+                                              trailing: const Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: Colors.grey,
+                                              ),
+                                              onTap:
+                                                  () => _showDoctorInfo(
+                                                    context,
+                                                    email,
+                                                  ),
+                                            );
+                                          }
+                                        },
+                                      );
                                     },
-                                  );
-                                },
-                              ),
+                                  ),
+                        ),
                       ),
-                    ),
             ),
             SizedBox(height: size.height * 0.03),
             Row(
               children: [
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: size.width * 0.02,
+                    ),
                     child: ElevatedButton(
                       onPressed: _generateQRCode,
                       style: ElevatedButton.styleFrom(
@@ -765,7 +870,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                             const SizedBox(width: 5),
                             Text(
                               "Get QR Code",
-                              style: GoogleFonts.poppins(color: Color.fromRGBO(33, 158, 80, 1)),
+                              style: GoogleFonts.poppins(
+                                color: Color.fromRGBO(33, 158, 80, 1),
+                              ),
                             ),
                           ],
                         ),
@@ -775,27 +882,38 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                 ),
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: size.width * 0.02),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: size.width * 0.02,
+                    ),
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfilePage(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(227, 243, 208, 1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const FittedBox(
+                      child: FittedBox(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.note_add,
+                            const Icon(
+                              Icons.view_list,
                               color: Color.fromRGBO(33, 158, 80, 1),
                             ),
-                            SizedBox(width: 5),
+                            const SizedBox(width: 5),
                             Text(
-                              "Add Notes",
-                              style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
+                              "View Records",
+                              style: GoogleFonts.poppins(
+                                color: Color.fromRGBO(33, 158, 80, 1),
+                              ),
                             ),
                           ],
                         ),

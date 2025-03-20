@@ -50,10 +50,12 @@ class _EditProfileState extends State<EditProfile> {
     try {
       String? email = await SessionManager.getUserSession();
       if (email != null) {
-        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
+        Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(
+          email,
+        );
         if (userData != null) {
-          Map<String, dynamic>? userInfo =
-              await DBHelper().getPatientsInfoByEmail(email);
+          Map<String, dynamic>? userInfo = await DBHelper()
+              .getPatientsInfoByEmail(email);
 
           setState(() {
             _fullName = userData['fullName'];
@@ -72,9 +74,9 @@ class _EditProfileState extends State<EditProfile> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading data: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
     }
   }
 
@@ -86,7 +88,9 @@ class _EditProfileState extends State<EditProfile> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your profile lacks medical history. Please add it.')),
+        const SnackBar(
+          content: Text('Your profile lacks medical history. Please add it.'),
+        ),
       );
     }
   }
@@ -99,27 +103,28 @@ class _EditProfileState extends State<EditProfile> {
 
       try {
         _formKey.currentState!.save();
-        
+
         // Save data to local state/cache first
         String? email = await SessionManager.getUserSession();
         if (email != null) {
           // Simulating local caching logic here
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile saved successfully')),
-            );
-            
-            // Reflect changes in the UI immediately
-            setState(() {
-              _fullName = _fullNameController.text;
-              _phoneNumber = _phoneNumberController.text;
-              _address = _addressController.text;
-              _contact = _contactController.text;
-              _dateOfBirth = _dateOfBirthController.text;
-            });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile saved successfully')),
+          );
+
+          // Reflect changes in the UI immediately
+          setState(() {
+            _fullName = _fullNameController.text;
+            _phoneNumber = _phoneNumberController.text;
+            _address = _addressController.text;
+            _contact = _contactController.text;
+            _dateOfBirth = _dateOfBirthController.text;
+          });
           // Attempt to sync with remote database
           Navigator.pop(context, true);
           try {
-            Map<String, dynamic>? userData = await DBHelper().getPatientsByEmail(email);
+            Map<String, dynamic>? userData = await DBHelper()
+                .getPatientsByEmail(email);
             if (userData != null) {
               await DBHelper().updatePatients(
                 email: email,
@@ -131,7 +136,8 @@ class _EditProfileState extends State<EditProfile> {
                 email: email,
                 address: _address,
                 contact: _contact,
-                birthday: _dateOfBirth != null ? DateTime.parse(_dateOfBirth!) : null,
+                birthday:
+                    _dateOfBirth != null ? DateTime.parse(_dateOfBirth!) : null,
               );
 
               ScaffoldMessenger.of(context).showSnackBar(
@@ -140,14 +146,16 @@ class _EditProfileState extends State<EditProfile> {
             }
           } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Unable to sync. Will retry when online.')),
+              const SnackBar(
+                content: Text('Unable to sync. Will retry when online.'),
+              ),
             );
           }
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       } finally {
         setState(() {
           _isLoading = false; // Stop loading regardless of error or success
@@ -155,7 +163,6 @@ class _EditProfileState extends State<EditProfile> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -188,18 +195,23 @@ class _EditProfileState extends State<EditProfile> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : const AssetImage('assets/images/avatar.png')
-                            as ImageProvider,
+                    backgroundImage:
+                        _imageFile != null
+                            ? FileImage(_imageFile!)
+                            : const AssetImage('assets/images/avatar.png')
+                                as ImageProvider,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextButton(
                       onPressed: _pickImage,
                       style: TextButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 190, 188, 190),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          190,
+                          188,
+                          190,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -208,12 +220,16 @@ class _EditProfileState extends State<EditProfile> {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.camera_alt,
-                              color: Color.fromRGBO(10, 62, 29, 1)),
+                          Icon(
+                            Icons.camera_alt,
+                            color: Color.fromRGBO(10, 62, 29, 1),
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Change Profile Picture',
-                            style: TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),
+                            style: TextStyle(
+                              color: Color.fromRGBO(10, 62, 29, 1),
+                            ),
                           ),
                         ],
                       ),
@@ -237,24 +253,26 @@ class _EditProfileState extends State<EditProfile> {
               _buildDatePickerField('Date of Birth', _dateOfBirthController),
               const SizedBox(height: 20),
               _buildMedicalHistoryList(),
-              Center(  
-                  child: TextButton(  
-                    onPressed: () {
-                      _showAddMedicalHistoryModal(context);
-                    },  
-                    child: const Text(  
-                      'Add Section',  
-                      style: TextStyle(color: Colors.green),  
-                    ),  
-                  ),  
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    _showAddMedicalHistoryModal(context);
+                  },
+                  child: const Text(
+                    'Add Section',
+                    style: TextStyle(color: Colors.green),
+                  ),
                 ),
+              ),
               Center(
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(33, 158, 80, 1),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -263,15 +281,16 @@ class _EditProfileState extends State<EditProfile> {
                     width: 150, // Set a fixed width
                     height: 24, // Set a fixed height to maintain size
                     child: Center(
-                      child: _isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            )
-                          : const Text(
-                              'Save Changes',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              )
+                              : const Text(
+                                'Save Changes',
+                                style: TextStyle(color: Colors.white),
+                              ),
                     ),
                   ),
                 ),
@@ -284,7 +303,10 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Widget _buildTextField(
-      String label, TextEditingController controller, Function(String) onChanged) {
+    String label,
+    TextEditingController controller,
+    Function(String) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: TextFormField(
@@ -296,30 +318,32 @@ class _EditProfileState extends State<EditProfile> {
           }
           return null;
         },
-        decoration: InputDecoration(  
-          labelText: label,  
-          labelStyle: const TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),  
-          border: OutlineInputBorder(  
-            borderRadius: BorderRadius.circular(10),  
-            borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1), width: 2.0),  
-          ),  
-          focusedBorder: OutlineInputBorder(  
-            borderRadius: BorderRadius.circular(10),  
-            borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-          ),  
-          enabledBorder: OutlineInputBorder(  
-            borderRadius: BorderRadius.circular(10),  
-            borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-          ),  
-                    fillColor: Colors.white,  
-          filled: true,  
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(
+              color: Color.fromRGBO(10, 62, 29, 1),
+              width: 2.0,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),
+          ),
+          fillColor: Colors.white,
+          filled: true,
         ),
       ),
     );
   }
 
-  Widget _buildDatePickerField(
-      String label, TextEditingController controller) {
+  Widget _buildDatePickerField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: TextFormField(
@@ -342,9 +366,7 @@ class _EditProfileState extends State<EditProfile> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -390,29 +412,23 @@ class _EditProfileState extends State<EditProfile> {
                         color: Color.fromRGBO(10, 62, 29, 1),
                       ),
                     ),
-                    IconButton(  
+                    IconButton(
                       icon: const Icon(Icons.edit, color: Colors.grey),
                       onPressed: () {
                         _showAddMedicalHistoryModal(context, record: record);
-                      },  
+                      },
                     ),
-                  ]
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   record['subtitle'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   record['description'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -423,7 +439,10 @@ class _EditProfileState extends State<EditProfile> {
     );
   }
 
-  void _showAddMedicalHistoryModal(BuildContext context, {Map<String, dynamic>? record}) {
+  void _showAddMedicalHistoryModal(
+    BuildContext context, {
+    Map<String, dynamic>? record,
+  }) {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController subtitleController = TextEditingController();
     final TextEditingController descriptionController = TextEditingController();
@@ -439,52 +458,76 @@ class _EditProfileState extends State<EditProfile> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: Text(record == null ? "Add Medical History" : "Edit Medical History", style: const TextStyle(color: Color.fromRGBO(33, 158, 80, 1), fontSize: 20),),
+          title: Text(
+            record == null ? "Add Medical History" : "Edit Medical History",
+            style: const TextStyle(
+              color: Color.fromRGBO(33, 158, 80, 1),
+              fontSize: 20,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
-                decoration: InputDecoration(  
-                  labelText: 'Title',  
-                  labelStyle: const TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  border: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1), width: 2.0),  
-                  ),  
-                  focusedBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                  enabledBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                            fillColor: Colors.white,  
-                  filled: true,  
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  labelStyle: const TextStyle(
+                    color: Color.fromRGBO(10, 62, 29, 1),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                      width: 2.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
                 style: GoogleFonts.poppins(color: Colors.black),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: subtitleController,
-                decoration: InputDecoration(  
-                  labelText: 'Subtitle',  
-                  labelStyle: const TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  border: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1), width: 2.0),  
-                  ),  
-                  focusedBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                  enabledBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                            fillColor: Colors.white,  
-                  filled: true,  
+                decoration: InputDecoration(
+                  labelText: 'Subtitle',
+                  labelStyle: const TextStyle(
+                    color: Color.fromRGBO(10, 62, 29, 1),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                      width: 2.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
                 style: GoogleFonts.poppins(color: Colors.black),
               ),
@@ -493,23 +536,32 @@ class _EditProfileState extends State<EditProfile> {
 
               TextField(
                 controller: descriptionController,
-                decoration: InputDecoration(  
-                  labelText: 'Description',  
-                  labelStyle: const TextStyle(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  border: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1), width: 2.0),  
-                  ),  
-                  focusedBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                  enabledBorder: OutlineInputBorder(  
-                    borderRadius: BorderRadius.circular(10),  
-                    borderSide: const BorderSide(color: Color.fromRGBO(10, 62, 29, 1)),  
-                  ),  
-                            fillColor: Colors.white,  
-                  filled: true,  
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: const TextStyle(
+                    color: Color.fromRGBO(10, 62, 29, 1),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                      width: 2.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color.fromRGBO(10, 62, 29, 1),
+                    ),
+                  ),
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
                 style: GoogleFonts.poppins(color: Colors.black),
                 maxLines: 3,
@@ -519,7 +571,10 @@ class _EditProfileState extends State<EditProfile> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -527,7 +582,9 @@ class _EditProfileState extends State<EditProfile> {
                 final subtitle = subtitleController.text.trim();
                 final description = descriptionController.text.trim();
 
-                if (title.isNotEmpty && subtitle.isNotEmpty && description.isNotEmpty) {
+                if (title.isNotEmpty &&
+                    subtitle.isNotEmpty &&
+                    description.isNotEmpty) {
                   final email = await SessionManager.getUserSession();
                   final user = await DBHelper().getPatientsByEmail(email!);
 
@@ -540,30 +597,45 @@ class _EditProfileState extends State<EditProfile> {
 
                     setState(() {
                       if (record == null) {
-                        _medicalHistory.add(medicalHistory); // Reflect change immediately
+                        _medicalHistory.add(
+                          medicalHistory,
+                        ); // Reflect change immediately
                       } else {
-                        int index = _medicalHistory.indexWhere((r) => r['title'] == record['title']);
+                        int index = _medicalHistory.indexWhere(
+                          (r) => r['title'] == record['title'],
+                        );
                         if (index != -1) {
-                          _medicalHistory[index] = medicalHistory; // Update the existing record
+                          _medicalHistory[index] =
+                              medicalHistory; // Update the existing record
                         }
                       }
                     });
 
-                    Navigator.pop(context); 
+                    Navigator.pop(context);
                     if (record == null) {
                       // Add new medical history
-                      await DBHelper().insertMedicalHistory(email, medicalHistory);
+                      await DBHelper().insertMedicalHistory(
+                        email,
+                        medicalHistory,
+                      );
                     } else {
                       // Update existing medical history
-                      await DBHelper().updateMedicalHistory(email, record['title'] ,medicalHistory);
+                      await DBHelper().updateMedicalHistory(
+                        email,
+                        record['title'],
+                        medicalHistory,
+                      );
                     }
                     setState(() {
-                      _loadMedicalHistory(email); 
+                      _loadMedicalHistory(email);
                     });
                   }
                 }
               },
-              child: const Text("Save", style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),),
+              child: const Text(
+                "Save",
+                style: TextStyle(color: Color.fromRGBO(33, 158, 80, 1)),
+              ),
             ),
           ],
         );

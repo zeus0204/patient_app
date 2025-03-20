@@ -1,0 +1,2 @@
+C:/Users/Admin/Videos/healthcare/patient_app/android/app/.cxx/RelWithDebInfo/1z2qb651/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Videos/healthcare/patient_app/android/app/.cxx/RelWithDebInfo/1z2qb651/arm64-v8a/CMakeFiles/rebuild_cache.dir
